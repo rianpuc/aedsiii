@@ -12,6 +12,7 @@ public class FileParser {
             while(sc.hasNextLine()){
                 boolean ratingHasFound = false;
                 String linha = sc.nextLine().trim();
+                linha = linha.substring(1);
                 String[] campos = linha.split(",", 4); //pegando os 3 primeiros campos pois sempre haverao esses
                 // DECLARACAO DAS VARIAVEIS //
                 String show_id = campos[0]; 
@@ -28,7 +29,6 @@ public class FileParser {
                 linha = linha.substring(campos[0].length() + campos[1].length() + campos[2].length() + 3); //fazendo uma nova string com o tamanho dos 3 primeiros campos + as virgulas, para remove-las
                 int inicio = linha.indexOf("\"");
                 int fim = linha.indexOf("\"", inicio+1)+1; //tentando pegar a posicao dos diretores
-                System.out.println("Linha original: " + linha);
                 if(linha.charAt(0) == '"'){ //verificando se o primeiro caracter eh um ", caso for, estamos lidando com varios diretores
                     diretor = linha.substring(inicio, fim);
                     linha = linha.replace(diretor, "");
@@ -40,7 +40,6 @@ public class FileParser {
                 } else { //se nao for nada, nao ha diretores, entao eu removo-a
                     linha = linha.substring(1);
                 }
-                System.out.println("Linha original: " + linha);
                 if(linha.charAt(0) == '"'){ //verifico se ha um ", caso houver quer dizer que estamos nos casts agora
                     cast = linha.substring(0, linha.indexOf("\"", 1)+1);
                     linha = linha.replace(cast, "");
@@ -52,7 +51,6 @@ public class FileParser {
                 } else { //caso nao tiver nada, nao existe cast
                     linha = linha.substring(1);
                 }
-                System.out.println("Linha original: " + linha);
                 if(linha.charAt(0) == '"'){ //verifico se existe ", para saber se estamos lidando com varios paises
                     country = linha.substring(0, linha.indexOf("\"", 1)+1);
                     linha = linha.replace(country, "");
@@ -64,19 +62,20 @@ public class FileParser {
                 } else { //se for uma virgula, nao ha pais
                     linha = linha.substring(1);
                 }
-                System.out.println("Linha original: " + linha);
-                if(linha.charAt(0) != ','){ //verifico se eh diferente de , para saber se existe uma data
+                if(linha.charAt(0) == '"'){ //verifico se existe ", para saber se estamos lidando com varios paises
+                data = linha.substring(0, linha.indexOf("\"", 1)+1);
+                linha = linha.replace(data, "");
+                linha = linha.substring(1);
+                }else if(linha.charAt(0) != ','){ //verifico se eh diferente de , para saber se existe uma data
                     campos = linha.split(",", 2);
                     data = campos[0];
                     linha = linha.substring(campos[0].length()+1);
                 } else { //se for uma virgula, nao ha pais
                     linha = linha.substring(1);
                 }
-                System.out.println("Linha original: " + linha);
                 campos = linha.split(",", 2); //pegando o release_year que sempre existe, porem nao ha " para diferenciar
                 String release_year = campos[0];
                 linha = linha.substring(campos[0].length()+1); //fazendo uma string nova com o tamanho do release_year e a virgula
-                System.out.println("Linha original: " + linha);
                 if(linha.charAt(0) != ','){ //vendo se o primeiro caracter nao eh uma virgula, creio q nao precisa tambem pq ja sai removendo tudo mas ta funcionando e nao mexo
                     campos = linha.split(",", 2); //separando para pegar
                     rating = campos[0]; //aqui salvo como "possivel" rating, pois pode nao haver rating
@@ -89,13 +88,11 @@ public class FileParser {
                         ratingHasFound = true;
                     }
                 }
-                System.out.println("Linha original: " + linha);
                 if(ratingHasFound){ //isso e so para lidar quando ahcamos o rating, entao pegamos o duration que eh oq vem dps
                     campos = linha.split(",", 2);
                     duration = campos[0];
                     linha = linha.substring(campos[0].length()+1);
                 }
-                System.out.println("Linha original: " + linha);
                 if(linha.charAt(0) == '"'){ //verificando se estamos lidando ocm varios "listed_in" ou somente um
                     listed_in = linha.substring(0, linha.indexOf("\"", 1)+1);
                     linha = linha.substring(0);
@@ -104,11 +101,10 @@ public class FileParser {
                     listed_in = campos[0];
                     linha = linha.substring(campos[0].length()+1);
                 }
-                System.out.println("Linha original: " + linha);
-                //linha = linha.replace(listed_in, "");
-                //linha = linha.substring(1);
+                linha = linha.replace(listed_in, "");
+                linha = linha.substring(1);
                 description = linha;
-                //linha = linha.replace(description, "");
+                linha = linha.replace(description, "");
                 System.out.printf("%s\nShow_ID: %s\nType: %s\nTitle: %s\nDiretor: %s\nCast: %s\nCountry: %s\nData: %s\nRelease Year: %s\nRating: %s\nDuration: %s\nListed in: %s\nDescription: %s\n\n\n", linha, show_id, type, title, diretor, cast, country, data, release_year, rating, duration, listed_in, description);
             }
             sc.close();
