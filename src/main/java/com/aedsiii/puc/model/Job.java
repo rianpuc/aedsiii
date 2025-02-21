@@ -1,4 +1,5 @@
 package com.aedsiii.puc.model;
+import java.io.DataOutputStream;
 import java.time.Instant;
 import java.util.List;
 
@@ -250,5 +251,46 @@ public class Job {
             skills != null ? String.join(", ", skills) : "N/A",
             responsibilities != null ? String.join(", ", responsibilities) : "N/A"
         );
+    }
+    public void toBytes(DataOutputStream dos){
+        try { 
+            dos.writeShort(this.job_id);
+            dos.writeUTF(this.experience);
+            dos.writeUTF(this.qualification);
+            dos.writeUTF(this.salary_range);
+            dos.writeUTF(this.location);
+            dos.writeUTF(this.country);
+            dos.writeFloat(this.latitude);
+            dos.writeFloat(this.longitude);
+            dos.writeInt(this.company_size);
+            dos.writeLong(this.job_posting_date.getEpochSecond());
+            dos.writeByte(6);
+            dos.writeBytes(this.preference);
+            dos.writeUTF(this.contact_person);
+            dos.writeUTF(this.contact);
+            dos.writeUTF(this.job_title);
+            dos.writeUTF(this.role);
+            dos.writeUTF(this.job_portal);
+            dos.writeUTF(this.job_description);
+            writeListBinary(dos, this.benefits);
+            writeListBinary(dos, this.skills);
+            writeListBinary(dos, this.responsibilities);
+            dos.writeUTF(this.company);
+            dos.writeUTF(this.company_profile);
+        } catch (Exception e) {
+            System.err.println("Erro em Job.java, toBytes: ID = " + this.job_id + " Catch = " + e);
+        }
+    }
+    private void writeListBinary(DataOutputStream dos, List<String> list) {
+        if (list != null) {
+            try {
+                dos.writeInt(list.size());
+                for (String item : list){
+                    dos.writeUTF(item);
+                }
+            } catch (Exception e) {
+                System.err.println("Erro em writeListBinary, Registro.java: " + e);
+            }
+        }
     }
 }

@@ -7,12 +7,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.List;
+import java.util.ArrayList;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import com.aedsiii.puc.model.Job;
 
 public class FileParser {
-    public static void parseFile(){
+    public static ArrayList<Job> parseFile(){
+        ArrayList<Job> jobs = new ArrayList<Job>();
         try{
             String arquivoPath = FileChooser.getFilePath();
             try (CSVReader reader = new CSVReader(new FileReader(arquivoPath))) {
@@ -20,7 +22,7 @@ public class FileParser {
                 records.remove(0);
                 for (String[] row : records) {
                     Job job = parseJob(row);
-                    job.mostrar();
+                    jobs.add(job);
                 }
             } catch (IOException | CsvException e) {
                 e.printStackTrace();
@@ -28,6 +30,7 @@ public class FileParser {
         } catch (Exception e){
             System.err.println("Erro no FileParser.java: " + e);
         }
+        return jobs;
     }
     private static Job parseJob(String[] row){
         Job job = new Job();
@@ -51,7 +54,6 @@ public class FileParser {
         job.setRole(row[15]);
         job.setJobPortal(row[16]);
         job.setJob_description(row[17]);
-        // Tratando os campos que são listas
         job.setBenefits(parseList(row[18]));
         job.setSkills(parseList(row[19]));
         job.setResponsibilities(parseList(row[20]));

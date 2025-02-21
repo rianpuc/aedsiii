@@ -4,4 +4,5 @@ public class Registro {
     //TO-DO
     //Classe para converter Objeto(Job)
     //Em binario para gravar na Database
+    public Job job;
 }
