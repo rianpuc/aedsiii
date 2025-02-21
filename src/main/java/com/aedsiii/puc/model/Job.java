@@ -253,7 +253,9 @@ public class Job {
         );
     }
     public void toBytes(DataOutputStream dos){
-        try { 
+        try {
+            dos.writeInt(getByteSize());
+            dos.writeByte(1);
             dos.writeShort(this.job_id);
             dos.writeUTF(this.experience);
             dos.writeUTF(this.qualification);
@@ -262,10 +264,13 @@ public class Job {
             dos.writeUTF(this.country);
             dos.writeFloat(this.latitude);
             dos.writeFloat(this.longitude);
+            dos.writeUTF(this.work_type);
             dos.writeInt(this.company_size);
             dos.writeLong(this.job_posting_date.getEpochSecond());
             dos.writeByte(6);
-            dos.writeBytes(this.preference);
+            String preference = this.preference;
+            while(preference.length() < 6) preference += " ";
+            dos.write(preference.substring(0, 6).getBytes()); // STRING FIXA DE TAMANHO 6
             dos.writeUTF(this.contact_person);
             dos.writeUTF(this.contact);
             dos.writeUTF(this.job_title);
@@ -281,6 +286,59 @@ public class Job {
             System.err.println("Erro em Job.java, toBytes: ID = " + this.job_id + " Catch = " + e);
         }
     }
+    public int getByteSize(){
+        int size = 0;
+
+        size += Short.BYTES; // job_id (short = 2 bytes)
+        //System.out.printf("Job_ID Bytes: %d\n", Short.BYTES);
+        size += Float.BYTES * 2; // latitude + longitude (float = 4 bytes cada)
+        //System.out.printf("Latitude + Longitude Bytes: %d\n", Float.BYTES * 2);
+        size += Integer.BYTES; // company_size (int = 4 bytes)
+        //System.out.printf("Company_Size Bytes: %d\n", Integer.BYTES);
+        size += Long.BYTES; // job_posting_date armazenado como timestamp (long = 8 bytes)
+        //System.out.printf("Job_Posting_Date Bytes: %d\n", Long.BYTES);
+        // Strings - considera o tamanho da string + os 2 bytes de tamanho
+        size += getUtfSize(experience);
+        //System.out.printf("Experience Bytes: %d\n", getUtfSize(experience));
+        size += getUtfSize(qualification);
+        //System.out.printf("Qualification Bytes: %d\n", getUtfSize(qualification));
+        size += getUtfSize(salary_range);
+        //System.out.printf("Salary_Range Bytes: %d\n", getUtfSize(salary_range));
+        size += getUtfSize(location);
+        //System.out.printf("Location Bytes: %d\n", getUtfSize(location));
+        size += getUtfSize(country);
+        //System.out.printf("Country Bytes: %d\n", getUtfSize(country));
+        size += getUtfSize(work_type);
+        //System.out.printf("Work_Type Bytes: %d\n", getUtfSize(work_type));
+        size += getUtfSize(contact_person);
+        //System.out.printf("Contact_Person Bytes: %d\n", getUtfSize(contact_person));
+        size += getUtfSize(contact);
+        //System.out.printf("Contact Bytes: %d\n", getUtfSize(contact));
+        size += getUtfSize(job_title);
+        //System.out.printf("Job_Title Bytes: %d\n", getUtfSize(job_title));
+        size += getUtfSize(role);
+        //System.out.printf("Role Bytes: %d\n", getUtfSize(role));
+        size += getUtfSize(job_portal);
+        //System.out.printf("Job_Portal Bytes: %d\n", getUtfSize(job_portal));
+        size += getUtfSize(job_description);
+        //System.out.printf("Job_Description Bytes: %d\n", getUtfSize(job_description));
+        size += getUtfSize(company);
+        //System.out.printf("Company Bytes: %d\n", getUtfSize(company));
+        size += getUtfSize(company_profile);
+        //System.out.printf("Company_Profile Bytes: %d\n", getUtfSize(company_profile));
+        size += 8; // String fixa de tamanho 6 (preference) + 2 bytes 
+        //System.out.printf("Preference Bytes: %d\n", 8);
+
+        //Listas
+        size += getListUtfSize(benefits);
+        //System.out.printf("Benefits Bytes: %d\n", getListUtfSize(benefits));
+        size += getListUtfSize(skills);
+        //System.out.printf("Skills Bytes: %d\n", getListUtfSize(skills));
+        size += getListUtfSize(responsibilities);
+        //System.out.printf("Responsabilities Bytes: %d\n", getListUtfSize(responsibilities));
+    
+        return size;
+    }
     private void writeListBinary(DataOutputStream dos, List<String> list) {
         if (list != null) {
             try {
@@ -292,5 +350,16 @@ public class Job {
                 System.err.println("Erro em writeListBinary, Registro.java: " + e);
             }
         }
+    }
+    private int getListUtfSize(List<String> list) {
+        int size = Integer.BYTES; // 4 bytes para o tamanho da lista
+        for (String str : list) {
+            size += getUtfSize(str); // Adiciona o tamanho de cada string na lista
+        }
+        return size;
+    }
+    private int getUtfSize(String str) {
+        int utfLength = str.length();
+        return 2 + utfLength;
     }
 }

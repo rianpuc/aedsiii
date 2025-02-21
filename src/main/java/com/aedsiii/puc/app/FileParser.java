@@ -16,13 +16,16 @@ public class FileParser {
     public static ArrayList<Job> parseFile(){
         ArrayList<Job> jobs = new ArrayList<Job>();
         try{
-            String arquivoPath = FileChooser.getFilePath();
+            String arquivoPath = FileChooser.getCSVPath();
             try (CSVReader reader = new CSVReader(new FileReader(arquivoPath))) {
                 List<String[]> records = reader.readAll();
                 records.remove(0);
+                //int count = 0; // PRA DEBUGAR
                 for (String[] row : records) {
+                    //if (count >= 1) break; // PRA DEBUGAR
                     Job job = parseJob(row);
                     jobs.add(job);
+                    //count++; PRA DEBUGAR
                 }
             } catch (IOException | CsvException e) {
                 e.printStackTrace();
