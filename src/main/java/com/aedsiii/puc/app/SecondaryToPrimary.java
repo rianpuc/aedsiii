@@ -15,7 +15,7 @@ public class SecondaryToPrimary {
             dis.readInt(); //pulando o primeiro byte que guarda o ultimo ID cadastrado
             while(dis.available() > 0) {
                 Job job = new Job();
-                System.out.printf("Tamanho do registro: %d bytes\nAtivo: %d\n", dis.readInt(), dis.readByte());
+                //System.out.printf("Tamanho do registro: %d bytes\nAtivo: %d\n", dis.readInt(), dis.readByte());
                 job.setJob_id(dis.readShort());
                 job.setExperience(dis.readUTF());
                 job.setQualification(dis.readUTF());
