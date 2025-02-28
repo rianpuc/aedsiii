@@ -2,9 +2,13 @@ package com.aedsiii.puc.app;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.time.Instant;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+
 import com.aedsiii.puc.model.Job;
 
 public class SecondaryToPrimary {
@@ -35,6 +39,51 @@ public class SecondaryToPrimary {
             System.err.println("Erro no SecondaryToPrimary.java, getJob: " + e);
         }
         return job;
+    }
+    public static boolean removeJob(int id, String path){
+        boolean found = false;
+        String tempPath = path + ".tmp";
+        try {
+            FileInputStream fis = new FileInputStream(path);
+            DataInputStream dis = new DataInputStream(fis);
+            FileOutputStream fos = new FileOutputStream(tempPath);
+            DataOutputStream dos = new DataOutputStream(fos);
+
+            int lastId = dis.readInt();
+            dos.writeInt(lastId);
+            while (dis.available() > 0) {
+                int recordSize = dis.readInt();
+                byte alive = dis.readByte();
+                short jobId = dis.readShort();
+                byte[] data = new byte[recordSize - 3];
+                dis.readFully(data);
+                dos.writeInt(recordSize);
+                if (jobId == id && alive == 1) {
+                    dos.writeByte(0);
+                    found = true;
+                } else {
+                    dos.writeByte(alive);
+                }
+                dos.writeShort(jobId);
+                dos.write(data);
+            }
+            fis.close();
+            dis.close();
+            fos.close();
+            dos.close();
+            if (found) {
+                File oldFile = new File(path);
+                File newFile = new File(tempPath);
+                if (oldFile.delete()) {
+                    newFile.renameTo(oldFile);
+                }
+            } else {
+                new File(tempPath).delete();
+            }
+        } catch (Exception e){
+            System.err.println("Erro em SecondaryToPrimary.java, removeJob: " + e);
+        }
+        return found;
     }
     public static ArrayList<Job> toPrimary(String path){
         ArrayList<Job> jobs = new ArrayList<Job>();

@@ -29,7 +29,7 @@ public class Job {
     String company;
     String company_profile;
     public Job(){
-        this.job_id = 0;
+        this.job_id = -1;
         this.latitude = this.longitude = 0;
         this.experience = this.qualification = this.salary_range = this.location = this.country = this.work_type = this.contact = this.job_portal =
         this.preference = this.contact_person = this.job_title = this.role = this.job_description = this.company = this.company_profile = null;
