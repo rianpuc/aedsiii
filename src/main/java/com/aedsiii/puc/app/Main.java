@@ -52,6 +52,10 @@ public class Main {
             answer = sc.nextInt();
             switch (answer) {
                 case 1:
+                    id = SecondaryToPrimary.addJob(DB_PATH);
+                    if(id != -1){
+                        System.out.println("Nova vaga adicionada com sucesso! ID: " + id);
+                    }
                     break;
                 case 2:
                     break;

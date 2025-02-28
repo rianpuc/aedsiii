@@ -37,6 +37,33 @@ public class Job {
         this.job_posting_date = null;
         this.benefits = null;
     }
+    public Job(short job_id, String experience, String qualification, String salary_range, String location, String country, float latitude, float longitude, String work_type, int company_size, Instant job_posting_date, 
+        String preference, String contact_person, String contact, String job_title, String role, String job_portal, String job_description, List<String> benefits, List<String> skills, List<String> responsibilities, 
+        String company, String company_profile) {
+        this.job_id = job_id;
+        this.experience = experience;
+        this.qualification = qualification;
+        this.salary_range = salary_range;
+        this.location = location;
+        this.country = country;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.work_type = work_type;
+        this.company_size = company_size;
+        this.job_posting_date = job_posting_date;
+        this.preference = preference;
+        this.contact_person = contact_person;
+        this.contact = contact;
+        this.job_title = job_title;
+        this.role = role;
+        this.job_portal = job_portal;
+        this.job_description = job_description;
+        this.benefits = benefits;
+        this.skills = skills;
+        this.responsibilities = responsibilities;
+        this.company = company;
+        this.company_profile = company_profile;
+    }
     public short getJob_id() {
         return job_id;
     }
