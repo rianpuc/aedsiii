@@ -46,6 +46,7 @@ public class Main {
         }
         Scanner sc = new Scanner(System.in);
         int answer = -1;
+        int id;
         while(answer != 0){
             printMenu();
             answer = sc.nextInt();
@@ -58,7 +59,7 @@ public class Main {
                     break;
                 case 4:
                     System.out.println("Insira o ID: ");
-                    int id = sc.nextInt();
+                    id = sc.nextInt();
                     boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
                     if(res){
                         System.out.println("Registro com ID " + id + " removido!");
@@ -74,8 +75,8 @@ public class Main {
                     break;
                 case 6:
                     System.out.println("Insira o ID: ");
-                    int id1 = sc.nextInt();
-                    Job job = SecondaryToPrimary.getJob(id1, "binary_db.db");
+                    id = sc.nextInt();
+                    Job job = SecondaryToPrimary.getJob(id, DB_PATH);
                     if(job.getJob_id() != -1)
                         job.mostrar();
                     else
