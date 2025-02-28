@@ -17,6 +17,7 @@ public class Main {
                           "\t3. Atualizar\n" +
                           "\t4. Remover\n" +
                           "\t5. Mostrar\n" +
+                          "\t6. Get\n" +
                           "\t0. Sair\n" +
                           "\tOpcao: ");
     }
@@ -62,6 +63,14 @@ public class Main {
                         job.mostrar();
                     }
                     break;
+                case 6:
+                    System.out.println("Insira o ID: ");
+                    int id = sc.nextInt();
+                    Job job = SecondaryToPrimary.getJob(id, "binary_db.db");
+                    if(job.getJob_id() != 0)
+                        job.mostrar();
+                    else
+                        System.out.println("Registro nao encontrado.");
                 case 0:
                     break;
             }
