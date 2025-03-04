@@ -30,6 +30,7 @@ public class SecondaryToPrimary {
             
             job.setJob_id((short) (last_id + 1));
             job.toBytes(dos);
+            last_id += 1;
         } catch (IOException e){
             System.err.println("Erro em SecondaryToPrimary.java, addJob: " + e);
         }
