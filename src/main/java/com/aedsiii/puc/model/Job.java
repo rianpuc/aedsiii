@@ -247,8 +247,8 @@ public class Job {
     public void setCompany_profile(String company_profile) {
         this.company_profile = company_profile;
     }
-    public void mostrar(){
-        System.out.printf(
+    public String toString(){
+        return String.format(
             "Job ID: %d\n" +
             "Experience: %s\n" +
             "Qualification: %s\n" +

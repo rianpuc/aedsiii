@@ -74,7 +74,7 @@ public class Main {
                 case 5:
                     ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
                     for (Job job : jobs) {
-                        job.mostrar();
+                        System.out.println(job);;
                     }
                     break;
                 case 6:
@@ -82,7 +82,7 @@ public class Main {
                     id = sc.nextInt();
                     Job job = SecondaryToPrimary.getJob(id, DB_PATH);
                     if(job.getJob_id() != -1)
-                        job.mostrar();
+                        System.out.println(job);
                     else
                         System.out.println("Registro nao encontrado.");
                 case 0:
