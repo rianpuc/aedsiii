@@ -282,9 +282,9 @@ public class Job {
     }
     public void toBytes(DataOutputStream dos){
         try {
+            dos.writeByte(1); // lápide (1 = vivo)
             dos.writeInt(getByteSize());
             //System.out.printf("ID: %d, Bytes: %d\n", this.job_id, getByteSize());
-            dos.writeByte(1);
             dos.writeShort(this.job_id);
             dos.writeUTF(this.experience);
             dos.writeUTF(this.qualification);
@@ -367,10 +367,11 @@ public class Job {
         // System.out.printf("Total: %d\n", size);
         return size;
     }
+    
     private void writeListBinary(DataOutputStream dos, List<String> list) {
         if (list != null) {
             try {
-                dos.writeInt(list.size());
+                dos.writeInt(list.size()); // Campo para número de itens na lista
                 for (String item : list){
                     dos.writeUTF(item);
                 }
@@ -387,7 +388,7 @@ public class Job {
         return size;
     }
     private int getUtfSize(String str) {
-        int utfLength = str.getBytes(StandardCharsets.UTF_8).length;
-        return 2 + utfLength;
+        int utfLength = str.getBytes(StandardCharsets.UTF_8).length; // Caracteres especiais em unicode usam mais de 1 byte
+        return 2 + utfLength; // 2 bytes de indicador de tamanho da string
     }
 }

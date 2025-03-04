@@ -65,8 +65,11 @@ public class FileParser {
         return job;
     }
     private static List<String> parseList(String raw) {
-        return Arrays.stream(raw.replaceAll("[{}\"]", "").split(","))
-                     .map(String::trim)
-                     .collect(Collectors.toList());
+        String processed = raw.replaceAll("[{}\"]", ""); // Remover {} e " do campo que conter uma lista
+        String[] parts = processed.split(","); // Pegando cada item usando "," como separador
+        List<String> parsedList = Arrays.stream(parts) // Arrays.stream(parts) pra poder usar a stream API (pra usar o map e collect ali embaixo)
+                                  .map(String::trim) // Dar trim() em cada item na stream pra tirar espaços em branco q tiverem sobrado
+                                  .collect(Collectors.toList()); // Pegar os itens da stream e transformar de volta pra uma lista normal
+        return parsedList;
     }
 }
