@@ -51,17 +51,18 @@ public class Main {
             printMenu();
             answer = sc.nextInt();
             switch (answer) {
-                case 1:
-                    id = SecondaryToPrimary.addJob(DB_PATH);
+                case 1: // addJob
+                    Job addJob = JobDataCollector.collectJobData(sc);
+                    id = SecondaryToPrimary.addJob(addJob, DB_PATH);
                     if(id != -1){
                         System.out.println("Nova vaga adicionada com sucesso! ID: " + id);
                     }
                     break;
-                case 2:
+                case 2: // editJob
                     break;
-                case 3:
+                case 3: // updateJob
                     break;
-                case 4:
+                case 4: // removeJob
                     System.out.println("Insira o ID: ");
                     id = sc.nextInt();
                     boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
@@ -71,13 +72,13 @@ public class Main {
                         System.out.println("Registro nao encontrado.");
                     }
                     break;
-                case 5:
+                case 5: // mostrar todos os jobs
                     ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
                     for (Job job : jobs) {
                         System.out.println(job);;
                     }
                     break;
-                case 6:
+                case 6: // getJob
                     System.out.println("Insira o ID: ");
                     id = sc.nextInt();
                     Job job = SecondaryToPrimary.getJob(id, DB_PATH);

@@ -4,11 +4,8 @@ import java.util.List;
 import java.util.Scanner;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,91 +14,23 @@ import java.io.File;
 import com.aedsiii.puc.model.Job;
 
 public class SecondaryToPrimary {
-    public static int addJob(String path){
+    public static int addJob(Job job, String path){
         int last_id = -1;
         try {
-            Scanner sc = new Scanner(System.in);
+            // Lendo cabeçalho (ultimo ID adicionado)
             FileInputStream arq = new FileInputStream(path);
             DataInputStream dis = new DataInputStream(arq);
             last_id = dis.readInt();
             arq.close();
             dis.close();
+
+            // Abrindo no modo append pra escrever a partir do final (parametro true)
             FileOutputStream fos = new FileOutputStream(path, true);
             DataOutputStream dos = new DataOutputStream(fos);
-            String experience;
-            String qualification;
-            String salary_range;
-            String location;
-            String country;
-            float latitude;
-            float longitude;
-            String work_type;
-            int company_size;
-            Instant job_posting_date;
-            String preference;
-            String contact_person;
-            String contact;
-            String job_title;
-            String role;
-            String job_portal;
-            String job_description;
-            String company;
-            String company_profile;
-            System.out.println("Experiencia? (XX to XX Years)");
-            experience = sc.nextLine();
-            System.out.println("Qualificacao? (PhD, M.Tech, BCA, BBA, etc.)");
-            qualification = sc.nextLine();
-            System.out.println("Salario? ($XX-$XX)");
-            salary_range = sc.nextLine();
-            System.out.println("Cidade?");
-            location = sc.nextLine();
-            System.out.println("Pais?");
-            country = sc.nextLine();
-            System.out.println("Latitude? (4 decimais)");
-            latitude = sc.nextFloat();
-            sc.nextLine();
-            System.out.println("Longitude? (4 decimais)");
-            longitude = sc.nextFloat();
-            sc.nextLine();
-            System.out.println("Tipo de Trabalho? (Full-Time, Intern, Contract, etc.)");
-            work_type = sc.nextLine();
-            System.out.println("Quantidade de Funcionarios na Empresa?");
-            company_size = sc.nextInt();
-            sc.nextLine();
-            System.out.println("Data que foi postada a vaga: (dd/MM/yyyy)");
-            String inputDate = sc.nextLine();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDate localDate = LocalDate.parse(inputDate, formatter);
-            LocalDateTime localDateTime = localDate.atStartOfDay();
-            job_posting_date = localDateTime.toInstant(ZoneOffset.UTC);
-            System.out.println("Preferencia de Genero? (Male, Female or Both)");
-            preference = sc.nextLine();
-            System.out.println("Nome da Pessoa para Contato: ");
-            contact_person = sc.nextLine();
-            System.out.println("Contato da Pessoa (Telefone ou Celular): ");
-            contact = sc.nextLine();
-            System.out.println("Titulo do Trabalho: ");
-            job_title = sc.nextLine();
-            System.out.println("Cargo do Trabalho: ");
-            role = sc.nextLine();
-            System.out.println("Onde a Vaga foi Divulgada: ");
-            job_portal = sc.nextLine();
-            System.out.println("Descricao da Vaga: ");
-            job_description = sc.nextLine();
-            List<String> benefits = new ArrayList<>();
-            List<String> skills = new ArrayList<>();
-            List<String> responsibilities = new ArrayList<>();
-            addToList(sc, "Digite um benefício (ou 'PARAR' para terminar):", benefits);
-            addToList(sc, "Digite uma habilidade necessária (ou 'PARAR' para terminar):", skills);
-            addToList(sc, "Digite uma responsabilidade do cargo (ou 'PARAR' para terminar):", responsibilities);
-            System.out.println("Nome da Empresa: ");
-            company = sc.nextLine();
-            System.out.println("Perfil da Empresa (Website, Localizacao, etc.): ");
-            company_profile = sc.nextLine();
-            Job job = new Job((short)++last_id, experience, qualification, salary_range, location, country, latitude, longitude, work_type, company_size, job_posting_date, preference, contact_person, contact, job_title, role,
-            job_portal, job_description, benefits, skills, responsibilities, company, company_profile);
+            
+            job.setJob_id((short) (last_id + 1));
             job.toBytes(dos);
-        } catch (Exception e){
+        } catch (IOException e){
             System.err.println("Erro em SecondaryToPrimary.java, addJob: " + e);
         }
         return last_id;
@@ -114,23 +43,23 @@ public class SecondaryToPrimary {
             DataInputStream dis = new DataInputStream(arq);
             dis.readInt(); //pulando o primeiro byte que guarda o ultimo ID cadastrado
             while (dis.available() > 0) { // Enquanto houver bytes para ler
-                int recordSize = dis.readInt(); // Lê o tamanho do registro
                 byte alive = dis.readByte(); //Ve se ta vivo
+                int recordSize = dis.readInt(); // Lê o tamanho do registro
                 short jobId = dis.readShort(); // Lê o ID do registro
                 //System.out.printf("Job ID Atual: %d\nTamanho: %d\n", jobId, recordSize);
                 if (jobId == id && alive == 1) {
-                    byte[] data = new byte[recordSize - 3]; // Já lemos o ID, então o resto é o conteúdo
+                    byte[] data = new byte[recordSize - 2]; // Já lemos o ID, então o resto é o conteúdo (-2 bytes do short jobId)
                     dis.readFully(data);
-                    job = deserializeJob(data);
+                    job = deserializeJob(data); // deserialize = transformar array de bytes em objeto
                     job.setJob_id(jobId);
                     break; // Para a leitura assim que encontramos o ID
                 } else {
-                    dis.skipBytes(recordSize - 3); // Pula o restante do registro
+                    dis.skipBytes(recordSize - 2); // Pula o restante do registro
                 }
             }
             arq.close();
             dis.close();
-        } catch (Exception e){
+        } catch (IOException e){
             System.err.println("Erro no SecondaryToPrimary.java, getJob: " + e);
         }
         return job;
@@ -141,24 +70,26 @@ public class SecondaryToPrimary {
         try {
             FileInputStream fis = new FileInputStream(path);
             DataInputStream dis = new DataInputStream(fis);
+
+            // colocando alterações em um arquivo novo pq n tamo usando RAF ainda, mas no fim só vai mudar o byte de lapide
             FileOutputStream fos = new FileOutputStream(tempPath);
             DataOutputStream dos = new DataOutputStream(fos);
 
             int lastId = dis.readInt();
             dos.writeInt(lastId);
             while (dis.available() > 0) {
-                int recordSize = dis.readInt();
                 byte alive = dis.readByte();
+                int recordSize = dis.readInt();
                 short jobId = dis.readShort();
-                byte[] data = new byte[recordSize - 3];
+                byte[] data = new byte[recordSize - 2]; // -2 bytes do short jobId
                 dis.readFully(data);
-                dos.writeInt(recordSize);
                 if (jobId == id && alive == 1) {
-                    dos.writeByte(0);
+                    dos.writeByte(0); // 0 = morto
                     found = true;
                 } else {
                     dos.writeByte(alive);
                 }
+                dos.writeInt(recordSize);
                 dos.writeShort(jobId);
                 dos.write(data);
             }
@@ -172,15 +103,15 @@ public class SecondaryToPrimary {
                 if (oldFile.delete()) {
                     newFile.renameTo(oldFile);
                 }
-            } else {
+            } else { // não encontrado = nenhuma alteração feita, arquivo temp pode ir embora
                 new File(tempPath).delete();
             }
-        } catch (Exception e){
+        } catch (IOException e){
             System.err.println("Erro em SecondaryToPrimary.java, removeJob: " + e);
         }
         return found;
     }
-    public static ArrayList<Job> toPrimary(String path){
+    public static ArrayList<Job> toPrimary(String path){ // pegar jobs do db e transformar tudo em uma listona
         ArrayList<Job> jobs = new ArrayList<Job>();
         try {
             FileInputStream arq = new FileInputStream(path);
@@ -189,8 +120,8 @@ public class SecondaryToPrimary {
             while(dis.available() > 0) {
                 Job job = new Job();
                 //System.out.printf("Tamanho do registro: %d bytes\nAtivo: %d\n", dis.readInt(), dis.readByte());
-                dis.readInt();
-                dis.readByte();
+                dis.readByte(); // lapide
+                dis.readInt(); // tamanho do registro
                 job.setJob_id(dis.readShort());
                 job.setExperience(dis.readUTF());
                 job.setQualification(dis.readUTF());
