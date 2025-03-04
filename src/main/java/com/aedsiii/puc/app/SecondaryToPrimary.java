@@ -48,13 +48,13 @@ public class SecondaryToPrimary {
                 short jobId = dis.readShort(); // Lê o ID do registro
                 //System.out.printf("Job ID Atual: %d\nTamanho: %d\n", jobId, recordSize);
                 if (jobId == id && alive == 1) {
-                    byte[] data = new byte[recordSize - 2]; // Já lemos o ID, então o resto é o conteúdo (-2 bytes do short jobId)
+                    byte[] data = new byte[recordSize - 3]; // Já lemos o ID, então o resto é o conteúdo
                     dis.readFully(data);
                     job = deserializeJob(data); // deserialize = transformar array de bytes em objeto
                     job.setJob_id(jobId);
                     break; // Para a leitura assim que encontramos o ID
                 } else {
-                    dis.skipBytes(recordSize - 2); // Pula o restante do registro
+                    dis.skipBytes(recordSize - 3); // Pula o restante do registro
                 }
             }
             arq.close();
@@ -81,7 +81,7 @@ public class SecondaryToPrimary {
                 byte alive = dis.readByte();
                 int recordSize = dis.readInt();
                 short jobId = dis.readShort();
-                byte[] data = new byte[recordSize - 2]; // -2 bytes do short jobId
+                byte[] data = new byte[recordSize - 3]; // -2 bytes do short jobId
                 dis.readFully(data);
                 if (jobId == id && alive == 1) {
                     dos.writeByte(0); // 0 = morto

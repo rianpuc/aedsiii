@@ -48,7 +48,7 @@ public class Main {
         int id;
         while(answer != 0){
             printMenu();
-            answer = sc.nextInt();
+            answer = Integer.parseInt(sc.nextLine());
             switch (answer) {
                 case 1: // addJob
                     Job addJob = JobDataCollector.collectJobData(sc);
@@ -61,7 +61,7 @@ public class Main {
                     break;
                 case 3: // removeJob
                     System.out.println("Insira o ID: ");
-                    id = sc.nextInt();
+                    id = Integer.parseInt(sc.nextLine());
                     boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
                     if(res){
                         System.out.println("Registro com ID " + id + " removido!");
@@ -72,17 +72,20 @@ public class Main {
                 case 4: // mostrar todos os jobs
                     ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
                     for (Job job : jobs) {
-                        System.out.println(job);;
+                        System.out.println(job);
                     }
                     break;
                 case 5: // getJob
                     System.out.println("Insira o ID: ");
-                    id = sc.nextInt();
+                    id = Integer.parseInt(sc.nextLine());
                     Job job = SecondaryToPrimary.getJob(id, DB_PATH);
-                    if(job.getJob_id() != -1)
+                    if(job.getJob_id() != -1) {
                         System.out.println(job);
-                    else
+                    }
+                    else {
                         System.out.println("Registro nao encontrado.");
+                    }
+                    break;
                 case 0:
                     break;
             }
