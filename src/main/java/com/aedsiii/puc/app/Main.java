@@ -15,10 +15,9 @@ public class Main {
     public static void printMenu(){
         System.out.printf("\t1. Inserir\n" +
                           "\t2. Editar\n" +
-                          "\t3. Atualizar\n" +
-                          "\t4. Remover\n" +
-                          "\t5. Mostrar\n" +
-                          "\t6. Get\n" +
+                          "\t3. Remover\n" +
+                          "\t4. Mostrar\n" +
+                          "\t5. Get\n" +
                           "\t0. Sair\n" +
                           "\tOpcao: ");
     }
@@ -60,9 +59,7 @@ public class Main {
                     break;
                 case 2: // editJob
                     break;
-                case 3: // updateJob
-                    break;
-                case 4: // removeJob
+                case 3: // removeJob
                     System.out.println("Insira o ID: ");
                     id = sc.nextInt();
                     boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
@@ -72,13 +69,13 @@ public class Main {
                         System.out.println("Registro nao encontrado.");
                     }
                     break;
-                case 5: // mostrar todos os jobs
+                case 4: // mostrar todos os jobs
                     ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
                     for (Job job : jobs) {
                         System.out.println(job);;
                     }
                     break;
-                case 6: // getJob
+                case 5: // getJob
                     System.out.println("Insira o ID: ");
                     id = sc.nextInt();
                     Job job = SecondaryToPrimary.getJob(id, DB_PATH);
