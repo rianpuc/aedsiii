@@ -17,7 +17,7 @@ public class PrimaryToSecondary {
             int lastId = lastJob.getJob_id(); // cabeçalho, ultimo id da lista
             dos.writeInt(lastId);
             for(Job job : jobs) {
-                job.toBytes(dos);
+                job.toBytes(dos, 1, false, 0);
             }
             arq.close();
             dos.close();

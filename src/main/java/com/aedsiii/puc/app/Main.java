@@ -58,6 +58,14 @@ public class Main {
                     }
                     break;
                 case 2: // editJob
+                    System.out.println("Informe o ID da vaga a ser editada: ");
+                    id = Integer.parseInt(sc.nextLine());
+                    boolean status = SecondaryToPrimary.updateJob(id, dbPath, sc);
+                    if (status) {
+                        System.out.println("Vaga editada com sucesso! ID: " + id);
+                    } else {
+                        System.out.println("Vaga não encontrada. ID: " + id);
+                    }
                     break;
                 case 3: // removeJob
                     System.out.println("Insira o ID: ");

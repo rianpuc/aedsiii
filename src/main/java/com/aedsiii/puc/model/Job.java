@@ -280,10 +280,18 @@ public class Job {
             responsibilities != null ? String.join(", ", responsibilities) : "N/A"
         );
     }
-    public void toBytes(DataOutputStream dos){
+    public void toBytes(DataOutputStream dos, int alive, boolean custom, int customRecordSize){
         try {
-            dos.writeByte(1); // lápide (1 = vivo)
-            dos.writeInt(getByteSize());
+            if (alive == 1) {
+                dos.writeByte(1); // lápide (1 = vivo)
+            } else {
+                dos.writeByte(0);
+            }
+            if (custom) { // customRecordSize vai ser usado pra manter o tamanho original do registro no updateJobs
+                dos.writeInt(customRecordSize);
+            } else {
+                dos.writeInt(getByteSize());
+            }
             //System.out.printf("ID: %d, Bytes: %d\n", this.job_id, getByteSize());
             dos.writeShort(this.job_id);
             dos.writeUTF(this.experience);
