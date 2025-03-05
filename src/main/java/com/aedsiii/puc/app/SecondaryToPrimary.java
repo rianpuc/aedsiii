@@ -115,7 +115,8 @@ public class SecondaryToPrimary {
     public static boolean updateJob(int id, String path, Scanner sc) { // n vejo mt sentido em usar 2 arquivos sem raf enquanto usa uma logica de raf com 1 arquivo só, dps a gnt podia tirar essa duvida
         boolean status = false;
         boolean found = false;
-        Job job = new Job();
+        Job job = new Job(); // pras iterações
+        Job updatedJob = new Job(); // pra escrita no fim do arquivo caso necessario
         String tempPath = path + ".tmp";
         try {
             FileInputStream fis = new FileInputStream(path);
@@ -142,24 +143,23 @@ public class SecondaryToPrimary {
                     found = true;
                     foundId = jobId;
                     job.setJob_id(jobId);
-                    JobDataCollector.updateJobData(sc, job);
-                    int newRecordSize = job.getByteSize(); // tamanho do registro atualizado
+                    updatedJob = JobDataCollector.updateJobData(sc, job);
+                    int newRecordSize = updatedJob.getByteSize(); // tamanho do registro atualizado
 
                     if (newRecordSize <= originalRecordSize) {
-                        job.toBytes(dos, alive, true, originalRecordSize); // talvez seria melhor se a gnt mudasse o toBytes pra n escrever a lapide e o tamanho do registro? aí faria por fora
+                        updatedJob.toBytes(dos, alive, true, originalRecordSize); // talvez seria melhor se a gnt mudasse o toBytes pra n escrever a lapide e o tamanho do registro? aí faria por fora
                         int bytesEmBranco = originalRecordSize - newRecordSize;
                         for (int i = 0; i < bytesEmBranco; i++) {
                             dos.writeByte(0);
                         }
                         status = true;
                     } else { // registro atualizado ocupa mais espaço, ent matar o registro aq e colocar o atualizado no final
-                        // Mark the old job as deleted
                         dos.writeByte(0); // 0 = morto
                         dos.writeInt(originalRecordSize);
                         dos.writeShort(jobId);
                         dos.write(data);
                         biggerRecord = true;
-                        System.out.println("BiggerRecord: " + biggerRecord);
+                        //System.out.println("BiggerRecord: " + biggerRecord);
                     }
                 } else {
                     dos.writeByte(alive);
@@ -170,11 +170,11 @@ public class SecondaryToPrimary {
             }
 
             if (biggerRecord) { // se o registro for maior que o original, escrever o atualizado no final
-                System.out.println("Escrevendo registro no fim do arquivo: " + biggerRecord);
-                System.out.println("Job ID: " + job.getJob_id());
-                job.setJob_id((short) foundId);
-                System.out.println("Job ID: " + job.getJob_id());
-                job.toBytes(dos, 1, false, 0);
+                //System.out.println("Escrevendo registro no fim do arquivo: " + biggerRecord);
+                //System.out.println("Job ID: " + job.getJob_id());
+                updatedJob.setJob_id((short) foundId);
+                //System.out.println("Job ID: " + job.getJob_id());
+                updatedJob.toBytes(dos, 1, false, 0);
                 status = true;
             }
 
