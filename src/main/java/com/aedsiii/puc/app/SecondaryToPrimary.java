@@ -137,6 +137,7 @@ public class SecondaryToPrimary {
                 dis.readFully(data);
                 job = deserializeJob(data); // deserialize = transformar array de bytes em objeto
                 job.setJob_id(jobId);
+
                 if (jobId == id && alive == 1) {
                     found = true;
                     Job oldJobBackup = job;
@@ -151,11 +152,18 @@ public class SecondaryToPrimary {
                         }
                         status = true;
                     } else { // registro atualizado ocupa mais espaço, ent matar o registro aq e colocar o atualizado no final
-                        oldJobBackup.toBytes(dos, 0, false, 0);
-                        biggerRecord = true;
+                        // Mark the old job as deleted
+                    dos.writeByte(0); // 0 = morto
+                    dos.writeInt(originalRecordSize);
+                    dos.writeShort(jobId);
+                    dos.write(data);
+                    biggerRecord = true;
                     }
                 } else {
-                    job.toBytes(dos, alive, false, 0);
+                    dos.writeByte(alive);
+                    dos.writeInt(originalRecordSize);
+                    dos.writeShort(jobId);
+                    dos.write(data);
                 }
             }
 
@@ -192,36 +200,16 @@ public class SecondaryToPrimary {
             dis.readInt(); //pulando o primeiro byte que guarda o ultimo ID cadastrado
             while(dis.available() > 0) {
                 Job job = new Job();
-                //System.out.printf("Tamanho do registro: %d bytes\nAtivo: %d\n", dis.readInt(), dis.readByte());
-                dis.readByte(); // lapide
-                dis.readInt(); // tamanho do registro
-                job.setJob_id(dis.readShort());
-                job.setExperience(dis.readUTF());
-                job.setQualification(dis.readUTF());
-                job.setSalary_range(dis.readUTF());
-                job.setLocation(dis.readUTF());
-                job.setCountry(dis.readUTF());
-                job.setLatitude(dis.readFloat());
-                job.setLongitude(dis.readFloat());
-                job.setWork_type(dis.readUTF());
-                job.setCompany_size(dis.readInt());
-                job.setJob_posting_date(Instant.ofEpochSecond(dis.readLong()));
-                int preferenciaLen = dis.readByte();
-                byte[] preferenciaBytes = new byte[preferenciaLen];
-                dis.readFully(preferenciaBytes);
-                job.setPreference(new String(preferenciaBytes).trim());
-                job.setContact_person(dis.readUTF());
-                job.setContact(dis.readUTF());
-                job.setJob_title(dis.readUTF());
-                job.setRole(dis.readUTF());
-                job.setJobPortal(dis.readUTF());
-                job.setJob_description(dis.readUTF());
-                job.setBenefits(readListBinary(dis));
-                job.setSkills(readListBinary(dis));
-                job.setResponsibilities(readListBinary(dis));
-                job.setCompany(dis.readUTF());
-                job.setCompany_profile(dis.readUTF());
+                byte alive = dis.readByte(); // lapide
+                int recordSize = dis.readInt(); // tamanho do registro
+                short jobId = dis.readShort(); // ID do registro
+                byte[] data = new byte[recordSize - 3]; // Já lemos o ID, então o resto é o conteúdo
+                dis.readFully(data);
+                job = deserializeJob(data); // deserialize = transformar array de bytes em objeto
+                job.setJob_id(jobId);
+                if (alive == 1) { // adicionar na lista só se o registro tiver vivo
                 jobs.add(job);
+                }
             }
             arq.close();
             dis.close();
