@@ -125,6 +125,7 @@ public class SecondaryToPrimary {
             DataOutputStream dos = new DataOutputStream(fos);
 
             boolean biggerRecord = false; // true caso a atualização deixe o registro maior
+            int foundId = -1; // o jobId vai mudando durante o loop, msm dps de encontrar o especificado
 
             int lastId = dis.readInt(); //pulando o primeiro byte que guarda o ultimo ID cadastrado
             dos.writeInt(lastId);
@@ -136,11 +137,11 @@ public class SecondaryToPrimary {
                 byte[] data = new byte[originalRecordSize - 3]; // Já lemos o ID, então o resto é o conteúdo
                 dis.readFully(data);
                 job = deserializeJob(data); // deserialize = transformar array de bytes em objeto
-                job.setJob_id(jobId);
-
+                
                 if (jobId == id && alive == 1) {
                     found = true;
-                    Job oldJobBackup = job;
+                    foundId = jobId;
+                    job.setJob_id(jobId);
                     JobDataCollector.updateJobData(sc, job);
                     int newRecordSize = job.getByteSize(); // tamanho do registro atualizado
 
@@ -153,11 +154,12 @@ public class SecondaryToPrimary {
                         status = true;
                     } else { // registro atualizado ocupa mais espaço, ent matar o registro aq e colocar o atualizado no final
                         // Mark the old job as deleted
-                    dos.writeByte(0); // 0 = morto
-                    dos.writeInt(originalRecordSize);
-                    dos.writeShort(jobId);
-                    dos.write(data);
-                    biggerRecord = true;
+                        dos.writeByte(0); // 0 = morto
+                        dos.writeInt(originalRecordSize);
+                        dos.writeShort(jobId);
+                        dos.write(data);
+                        biggerRecord = true;
+                        System.out.println("BiggerRecord: " + biggerRecord);
                     }
                 } else {
                     dos.writeByte(alive);
@@ -168,6 +170,10 @@ public class SecondaryToPrimary {
             }
 
             if (biggerRecord) { // se o registro for maior que o original, escrever o atualizado no final
+                System.out.println("Escrevendo registro no fim do arquivo: " + biggerRecord);
+                System.out.println("Job ID: " + job.getJob_id());
+                job.setJob_id((short) foundId);
+                System.out.println("Job ID: " + job.getJob_id());
                 job.toBytes(dos, 1, false, 0);
                 status = true;
             }
