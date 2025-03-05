@@ -24,14 +24,13 @@ public class Main {
     public static void main(String[] args) {
         Properties config = new Properties();
         File configFile = new File(CONFIG_FILE);
-        String dbPath = null;
         try {
             if (configFile.exists()) {
                 try (FileInputStream fis = new FileInputStream(configFile)) {
                     config.load(fis);
                 }
             }
-            dbPath = config.getProperty("binary.path");
+            String dbPath = config.getProperty("binary.path");
             if (dbPath == null || dbPath.isEmpty()) {
                 ArrayList<Job> jobs = FileParser.parseFile();
                 PrimaryToSecondary.toSecondary(jobs);
