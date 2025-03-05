@@ -139,6 +139,7 @@ public class SecondaryToPrimary {
                 job.setJob_id(jobId);
                 if (jobId == id && alive == 1) {
                     found = true;
+                    Job oldJobBackup = job;
                     JobDataCollector.updateJobData(sc, job);
                     int newRecordSize = job.getByteSize(); // tamanho do registro atualizado
 
@@ -150,7 +151,7 @@ public class SecondaryToPrimary {
                         }
                         status = true;
                     } else { // registro atualizado ocupa mais espaço, ent matar o registro aq e colocar o atualizado no final
-                        job.toBytes(dos, 0, false, 0);
+                        oldJobBackup.toBytes(dos, 0, false, 0);
                         biggerRecord = true;
                     }
                 } else {
