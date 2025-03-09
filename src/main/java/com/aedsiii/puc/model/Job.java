@@ -247,8 +247,8 @@ public class Job {
     public void setCompany_profile(String company_profile) {
         this.company_profile = company_profile;
     }
-    public void mostrar(){
-        System.out.printf(
+    public String toString(){
+        return String.format(
             "Job ID: %d\n" +
             "Experience: %s\n" +
             "Qualification: %s\n" +
@@ -280,11 +280,19 @@ public class Job {
             responsibilities != null ? String.join(", ", responsibilities) : "N/A"
         );
     }
-    public void toBytes(DataOutputStream dos){
+    public void toBytes(DataOutputStream dos, int alive, boolean custom, int customRecordSize){
         try {
-            dos.writeInt(getByteSize());
+            if (alive == 1) {
+                dos.writeByte(1); // lápide (1 = vivo)
+            } else {
+                dos.writeByte(0);
+            }
+            if (custom) { // customRecordSize vai ser usado pra manter o tamanho original do registro no updateJobs
+                dos.writeInt(customRecordSize);
+            } else {
+                dos.writeInt(getByteSize());
+            }
             //System.out.printf("ID: %d, Bytes: %d\n", this.job_id, getByteSize());
-            dos.writeByte(1);
             dos.writeShort(this.job_id);
             dos.writeUTF(this.experience);
             dos.writeUTF(this.qualification);
@@ -367,10 +375,11 @@ public class Job {
         // System.out.printf("Total: %d\n", size);
         return size;
     }
+    
     private void writeListBinary(DataOutputStream dos, List<String> list) {
         if (list != null) {
             try {
-                dos.writeInt(list.size());
+                dos.writeInt(list.size()); // Campo para número de itens na lista
                 for (String item : list){
                     dos.writeUTF(item);
                 }
@@ -387,7 +396,7 @@ public class Job {
         return size;
     }
     private int getUtfSize(String str) {
-        int utfLength = str.getBytes(StandardCharsets.UTF_8).length;
-        return 2 + utfLength;
+        int utfLength = str.getBytes(StandardCharsets.UTF_8).length; // Caracteres especiais em unicode usam mais de 1 byte
+        return 2 + utfLength; // 2 bytes de indicador de tamanho da string
     }
 }

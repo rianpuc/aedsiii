@@ -2,3 +2,5 @@
 *.db
 /target/
 .mvn/
+*.tmp
+*.temp

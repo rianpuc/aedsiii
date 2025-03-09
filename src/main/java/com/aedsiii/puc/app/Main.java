@@ -15,24 +15,22 @@ public class Main {
     public static void printMenu(){
         System.out.printf("\t1. Inserir\n" +
                           "\t2. Editar\n" +
-                          "\t3. Atualizar\n" +
-                          "\t4. Remover\n" +
-                          "\t5. Mostrar\n" +
-                          "\t6. Get\n" +
+                          "\t3. Remover\n" +
+                          "\t4. Mostrar\n" +
+                          "\t5. Get\n" +
                           "\t0. Sair\n" +
                           "\tOpcao: ");
     }
     public static void main(String[] args) {
         Properties config = new Properties();
         File configFile = new File(CONFIG_FILE);
-        String dbPath = null;
         try {
             if (configFile.exists()) {
                 try (FileInputStream fis = new FileInputStream(configFile)) {
                     config.load(fis);
                 }
             }
-            dbPath = config.getProperty("binary.path");
+            String dbPath = config.getProperty("binary.path");
             if (dbPath == null || dbPath.isEmpty()) {
                 ArrayList<Job> jobs = FileParser.parseFile();
                 PrimaryToSecondary.toSecondary(jobs);
@@ -49,21 +47,28 @@ public class Main {
         int id;
         while(answer != 0){
             printMenu();
-            answer = sc.nextInt();
+            answer = Integer.parseInt(sc.nextLine());
             switch (answer) {
-                case 1:
-                    id = SecondaryToPrimary.addJob(DB_PATH);
+                case 1: // addJob
+                    Job addJob = JobDataCollector.collectJobData(sc);
+                    id = SecondaryToPrimary.addJob(addJob, DB_PATH);
                     if(id != -1){
                         System.out.println("Nova vaga adicionada com sucesso! ID: " + id);
                     }
                     break;
-                case 2:
+                case 2: // editJob
+                    System.out.println("Informe o ID da vaga a ser editada: ");
+                    id = Integer.parseInt(sc.nextLine());
+                    boolean status = SecondaryToPrimary.updateJob(id, DB_PATH, sc);
+                    if (status) {
+                        System.out.println("Vaga editada com sucesso! ID: " + id);
+                    } else {
+                        System.out.println("Vaga não encontrada. ID: " + id);
+                    }
                     break;
-                case 3:
-                    break;
-                case 4:
+                case 3: // removeJob
                     System.out.println("Insira o ID: ");
-                    id = sc.nextInt();
+                    id = Integer.parseInt(sc.nextLine());
                     boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
                     if(res){
                         System.out.println("Registro com ID " + id + " removido!");
@@ -71,22 +76,27 @@ public class Main {
                         System.out.println("Registro nao encontrado.");
                     }
                     break;
-                case 5:
+                case 4: // mostrar todos os jobs
                     ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
                     for (Job job : jobs) {
-                        job.mostrar();
+                        System.out.println(job);
                     }
                     break;
-                case 6:
+                case 5: // getJob
                     System.out.println("Insira o ID: ");
-                    id = sc.nextInt();
+                    id = Integer.parseInt(sc.nextLine());
                     Job job = SecondaryToPrimary.getJob(id, DB_PATH);
-                    if(job.getJob_id() != -1)
-                        job.mostrar();
-                    else
+                    if(job.getJob_id() != -1) {
+                        System.out.println(job);
+                    }
+                    else {
                         System.out.println("Registro nao encontrado.");
+                    }
+                    break;
                 case 0:
                     break;
+                default:
+                    System.out.println("Opção inválida. Tente novamente.");
             }
         }
         sc.close();
