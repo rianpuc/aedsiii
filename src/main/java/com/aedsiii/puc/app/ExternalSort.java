@@ -43,13 +43,11 @@ public class ExternalSort {
             DataInputStream dis = new DataInputStream(arqOriginal);
             dis.readInt(); // lendo cabeçalho
 
-            ArrayList<FileOutputStream> caminhos_fos = new ArrayList<FileOutputStream>();
             ArrayList<DataOutputStream> caminhos_dos = new ArrayList<DataOutputStream>();
 
             for (int i = 0; i < m; i++) {
             	FileOutputStream fos = new FileOutputStream(temp_path + "/temp_fos" + i + ".tmp.db");
             	DataOutputStream dos = new DataOutputStream(fos);
-            	caminhos_fos.add(fos);
             	caminhos_dos.add(dos);
             }
 
@@ -91,24 +89,25 @@ public class ExternalSort {
             
             //INTERCALACAO
 
-            ArrayList<FileOutputStream> temps_fos = new ArrayList<FileOutputStream>();
             ArrayList<DataOutputStream> temps_dos = new ArrayList<DataOutputStream>();
-            ArrayList<FileInputStream> temps_fis = new ArrayList<FileInputStream>();
             ArrayList<DataInputStream> temps_dis = new ArrayList<DataInputStream>();
 
             for (int i = 0; i < m; i++) {
             	FileOutputStream fos = new FileOutputStream(temp_path + "/temp_i_fos" + i + ".tmp.db");
             	DataOutputStream dos = new DataOutputStream(fos);
+            	temps_dos.add(dos);
                 FileInputStream fis = new FileInputStream(temp_path + "/temp_fos" + i + ".tmp.db");
                 dis = new DataInputStream(fis);
-            	temps_fos.add(fos);
-            	temps_dos.add(dos);
-                temps_fis.add(fis);
                 temps_dis.add(dis);
             }
 
             boolean endOfFile[] = new boolean[m];
             int filePointer[] = new int[m];
+
+            // usado como limite da primeira intercalação
+            // int max_sorted = b*m;
+            // usado como limite da segunda intercalação até o final
+            // max_sorted = max_sorted * m;
 
             while(!finalized(endOfFile)){
                 ArrayList<Job> jobs = new ArrayList<Job>();
