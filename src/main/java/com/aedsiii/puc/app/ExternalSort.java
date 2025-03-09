@@ -82,9 +82,9 @@ public class ExternalSort {
     }
 
     public static void test_read(String external_sort_path, int m_caminhos) {
-        ArrayList<Job> jobs = new ArrayList<Job>();
         try {
             for (int i = 0; i < m_caminhos; i++) {
+                ArrayList<Job> jobs = new ArrayList<Job>();
                 String temp_files_path = external_sort_path + "/temp_fos" + i + ".tmp.db";
                 FileInputStream arq = new FileInputStream(temp_files_path);
                 DataInputStream dis = new DataInputStream(arq);
@@ -104,16 +104,14 @@ public class ExternalSort {
                 }
                 arq.close();
                 dis.close();
+                
+                System.out.println("\tARQUIVO TEMPORARIO (" + i + "):\n");
+                for (Job job : jobs) {
+                    System.out.println(job);
+                }
             }
         } catch (Exception e){
             System.err.println("Erro em SecondaryToPrimary.java: " + e);
-        }
-        // return jobs;
-        for (int i = 0; i < m_caminhos; i++) {
-            System.out.println("\tARQUIVO TEMPORARIO (" + i + "):\n");
-            for (Job job : jobs) {
-                System.out.println(job);
-            }
         }
     }
 }
