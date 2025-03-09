@@ -11,7 +11,9 @@ import com.aedsiii.puc.model.Job;
 
 public class Main {
     private static final String DB_PATH = "binary_db.db";
+    private static final String SMALL_DB_PATH = "smaller_binary_db.db";
     private static final String CONFIG_FILE = "config.properties";
+    private static final String EXTERNAL_SORT_PATH = "./external_sort";
     public static void printMenu(){
         System.out.printf("\t1. Inserir\n" +
                           "\t2. Editar\n" +
@@ -19,6 +21,7 @@ public class Main {
                           "\t4. Mostrar\n" +
                           "\t5. Get\n" +
                           "\t0. Sair\n" +
+                          "\t20. Teste de distribuição no arquivo DB menor\n" +
                           "\tOpcao: ");
     }
     public static void main(String[] args) {
@@ -31,10 +34,18 @@ public class Main {
                 }
             }
             String dbPath = config.getProperty("binary.path");
-            if (dbPath == null || dbPath.isEmpty()) {
+            String smallDbPath = config.getProperty("small_binary.path");
+            if (dbPath == null || dbPath.isEmpty() || smallDbPath == null || smallDbPath.isEmpty()) {
+                // PRIMEIRA ESCOLHA É O DB ORIGINAL
                 ArrayList<Job> jobs = FileParser.parseFile();
-                PrimaryToSecondary.toSecondary(jobs);
+                PrimaryToSecondary.toSecondary(jobs, DB_PATH);
                 config.setProperty("binary.path", DB_PATH);
+
+                // SEGUNDA ESCOLHA É O DB MENOR DE TESTES
+                ArrayList<Job> smallerJobs = FileParser.parseFile();
+                PrimaryToSecondary.toSecondary(smallerJobs, "smaller_binary_db.db");
+                config.setProperty("small_binary.path", "smaller_binary_db.db");
+
                 try (FileOutputStream fos = new FileOutputStream(configFile)) {
                     config.store(fos,  "Guardando o local do binario");
                 }
@@ -50,8 +61,8 @@ public class Main {
             answer = Integer.parseInt(sc.nextLine());
             switch (answer) {
                 case 1: // addJob
-                    Job addJob = JobDataCollector.collectJobData(sc);
-                    id = SecondaryToPrimary.addJob(addJob, DB_PATH);
+                    Job newJob = JobDataCollector.collectJobData(sc);
+                    id = SecondaryToPrimary.addJob(newJob, DB_PATH);
                     if(id != -1){
                         System.out.println("Nova vaga adicionada com sucesso! ID: " + id);
                     }
@@ -93,6 +104,13 @@ public class Main {
                         System.out.println("Registro nao encontrado.");
                     }
                     break;
+                case 20: // teste de distribuição
+                    System.out.println("Insira o limite de registros na memória primária: ");
+                    int b_registros = Integer.parseInt(sc.nextLine());
+                    System.out.println("Insira o número de caminhos a serem usados: ");
+                    int m_caminhos = Integer.parseInt(sc.nextLine());
+                    ExternalSort.sort(b_registros, m_caminhos, SMALL_DB_PATH, EXTERNAL_SORT_PATH);
+                    ExternalSort.test_read(EXTERNAL_SORT_PATH, m_caminhos);
                 case 0:
                     break;
                 default:

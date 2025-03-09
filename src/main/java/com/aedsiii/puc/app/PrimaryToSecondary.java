@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import com.aedsiii.puc.model.Job;
 
 public class PrimaryToSecondary {
-    public static void toSecondary(ArrayList<Job> jobs){ // criando arquivo db com os dados, caso ainda não exista
+    public static void toSecondary(ArrayList<Job> jobs, String path){ // criando arquivo db com os dados, caso ainda não exista
         try {
             FileOutputStream arq;
             DataOutputStream dos;
-            arq = new FileOutputStream("binary_db.db");
+            arq = new FileOutputStream(path);
             dos = new DataOutputStream(arq);
             int lastIndex = jobs.size()-1;
             Job lastJob = jobs.get(lastIndex);

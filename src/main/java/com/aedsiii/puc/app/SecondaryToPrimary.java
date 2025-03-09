@@ -246,7 +246,7 @@ public class SecondaryToPrimary {
         }
         return list;
     }
-    private static Job deserializeJob(byte[] data){
+    protected static Job deserializeJob(byte[] data){
         Job job = new Job();
         try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data))) {
             job.setExperience(dis.readUTF());
