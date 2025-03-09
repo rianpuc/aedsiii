@@ -6,8 +6,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import javax.xml.crypto.Data;
 
 import com.aedsiii.puc.model.Job;
 
@@ -84,6 +87,43 @@ public class ExternalSort {
             }
 
             dis.close();
+            dis = null;
+            
+            //INTERCALACAO
+
+            ArrayList<FileOutputStream> temps_fos = new ArrayList<FileOutputStream>();
+            ArrayList<DataOutputStream> temps_dos = new ArrayList<DataOutputStream>();
+            ArrayList<FileInputStream> temps_fis = new ArrayList<FileInputStream>();
+            ArrayList<DataInputStream> temps_dis = new ArrayList<DataInputStream>();
+
+            for (int i = 0; i < m; i++) {
+            	FileOutputStream fos = new FileOutputStream(temp_path + "/temp_i_fos" + i + ".tmp.db");
+            	DataOutputStream dos = new DataOutputStream(fos);
+                FileInputStream fis = new FileInputStream(temp_path + "/temp_fos" + i + ".tmp.db");
+                dis = new DataInputStream(fis);
+            	temps_fos.add(fos);
+            	temps_dos.add(dos);
+                temps_fis.add(fis);
+                temps_dis.add(dis);
+            }
+
+            boolean endOfFile[] = new boolean[m];
+            int filePointer[] = new int[m];
+
+            while(!finalized(endOfFile)){
+                ArrayList<Job> jobs = new ArrayList<Job>();
+                Job[] registrosAtuais = new Job[m];
+                for(int i = 0; i < b*m; i++) {
+                    Job menor = menorRegistro(temps_dis, filePointer, registrosAtuais);
+                    jobs.add(menor);
+                    filePointerPrint(filePointer);
+                }
+                for (Job job : jobs){
+                    System.out.printf("%s\n", job.toString());
+                }
+            }
+
+
         } catch (IOException e) {
             System.err.println("Erro em ExternalSort.java, sort");
             e.printStackTrace();
@@ -108,7 +148,7 @@ public class ExternalSort {
                     job = SecondaryToPrimary.deserializeJob(data); // deserialize = transformar array de bytes em objeto
                     job.setJob_id(jobId);
                     if (alive == 1) { // adicionar na lista só se o registro tiver vivo
-                    jobs.add(job);
+                        jobs.add(job);
                     }
                 }
                 arq.close();
@@ -121,6 +161,51 @@ public class ExternalSort {
             }
         } catch (Exception e){
             System.err.println("Erro em SecondaryToPrimary.java: " + e);
+        }
+    }
+
+    public static boolean finalized(boolean[] files){
+        boolean res = true;
+        for(int i = 0; i < files.length; i++){
+            if(files[i] == false){
+                res = false;
+                break;
+            }
+        }
+        return res;
+    }
+
+    public static Job menorRegistro(ArrayList<DataInputStream> dis, int[] indexes, Job[] registrosAtuais) throws IOException {
+        int menorIndex = -1;
+        Job menorJob = null;
+        for(int i = 0; i < dis.size(); i++){
+            if (registrosAtuais[i] == null) { // Só lê do arquivo se ainda não temos um job salvo
+                DataInputStream stream = dis.get(i);
+                byte alive = stream.readByte(); // Lápide
+                int recordSize = stream.readInt(); // Tamanho do registro
+                short jobId = stream.readShort(); // ID do registro
+                byte[] data = new byte[recordSize - 3];
+                stream.readFully(data);
+                Job job = SecondaryToPrimary.deserializeJob(data);
+                job.setJob_id(jobId);
+                registrosAtuais[i] = job; // Salva o job lido
+            }
+    
+            // Verifica se este é o menor job até agora
+            if (menorJob == null || registrosAtuais[i].getJob_id() < menorJob.getJob_id()) {
+                menorJob = registrosAtuais[i];
+                menorIndex = i;
+            }
+        }
+        System.out.printf("\nMenor Index: %d\n", menorIndex);
+        registrosAtuais[menorIndex] = null;
+        indexes[menorIndex] += 1;
+        return menorJob;
+    }
+
+    public static void filePointerPrint(int[] filePointer){
+        for(int i = 0; i < filePointer.length; i++){
+            System.out.printf("filePointer[%d] = %d\n", i, filePointer[i]);
         }
     }
 }
