@@ -27,6 +27,15 @@ public class ExternalSort {
                 dir.mkdirs();
             }
 
+            // Excluir arquivos temporários de possíveis ordenações anteriores
+            // Ainda sobrará arquivos além de m, porém eles não serão usados ent n tem problema por enquanto
+            for (int i = 0; i < m; i++) {
+                File tempFile = new File(temp_path + "/temp_fos" + i + ".tmp.db");
+                if (tempFile.exists()) {
+                    tempFile.delete();
+                }
+            }
+
             FileInputStream arqOriginal = new FileInputStream(db_path);
             DataInputStream dis = new DataInputStream(arqOriginal);
             dis.readInt(); // lendo cabeçalho
@@ -104,7 +113,7 @@ public class ExternalSort {
                 }
                 arq.close();
                 dis.close();
-                
+
                 System.out.println("\tARQUIVO TEMPORARIO (" + i + "):\n");
                 for (Job job : jobs) {
                     System.out.println(job);
