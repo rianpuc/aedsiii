@@ -6,11 +6,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
-
-import javax.xml.crypto.Data;
 
 import com.aedsiii.puc.model.Job;
 
@@ -19,7 +18,7 @@ public class ExternalSort {
      * int m = caminhos
      * int b = tamanho dos blocos
      */
-    public static void sort(int b, int m, String db_path, String external_sort_path) {
+    public static void sort(int b, int m, String db_path, String external_sort_path, String original_db) {
         try {
             
             String temp_path = external_sort_path; // só pelo nome msm
@@ -32,16 +31,16 @@ public class ExternalSort {
 
             // Excluir arquivos temporários de possíveis ordenações anteriores
             // Ainda sobrará arquivos além de m, porém eles não serão usados ent n tem problema por enquanto
-            for (int i = 0; i < m; i++) {
-                File tempFile = new File(temp_path + "/temp_fos" + i + ".tmp.db");
-                if (tempFile.exists()) {
-                    tempFile.delete();
-                }
-            }
+            // for (int i = 0; i < m; i++) {
+            //     File tempFile = new File(temp_path + "/temp_fos" + i + ".tmp.db");
+            //     if (tempFile.exists()) {
+            //         tempFile.delete();
+            //     }
+            // }
 
             FileInputStream arqOriginal = new FileInputStream(db_path);
             DataInputStream dis = new DataInputStream(arqOriginal);
-            dis.readInt(); // lendo cabeçalho
+            int last_id = dis.readInt(); // lendo cabeçalho
 
             ArrayList<DataOutputStream> caminhos_dos = new ArrayList<DataOutputStream>();
 
@@ -84,8 +83,8 @@ public class ExternalSort {
             	fileIndex = (fileIndex + 1) % m; // loop circular. Indo para o proximo arquivo dos m caminhos
             }
 
+            caminhos_dos.clear();
             dis.close();
-            dis = null;
             
             //INTERCALACAO
 
@@ -94,11 +93,9 @@ public class ExternalSort {
 
             for (int i = 0; i < m; i++) {
             	FileOutputStream fos = new FileOutputStream(temp_path + "/temp_i_fos" + i + ".tmp.db");
-            	DataOutputStream dos = new DataOutputStream(fos);
-            	temps_dos.add(dos);
+            	temps_dos.add(new DataOutputStream(fos));
                 FileInputStream fis = new FileInputStream(temp_path + "/temp_fos" + i + ".tmp.db");
-                dis = new DataInputStream(fis);
-                temps_dis.add(dis);
+                temps_dis.add(new DataInputStream(fis));
             }
 
             boolean endOfFile[] = new boolean[m];
@@ -109,20 +106,52 @@ public class ExternalSort {
             // usado como limite da segunda intercalação até o final
             // max_sorted = max_sorted * m;
 
-            while(!finalized(endOfFile)){
-                ArrayList<Job> jobs = new ArrayList<Job>();
-                Job[] registrosAtuais = new Job[m];
-                for(int i = 0; i < b*m; i++) {
-                    Job menor = menorRegistro(temps_dis, filePointer, registrosAtuais);
-                    jobs.add(menor);
-                    filePointerPrint(filePointer);
+            fileIndex = 0;
+            int block_size = b*m;
+            Job[] registrosAtuais = new Job[m];
+            while(true){
+                // Contar quantos arquivos ainda têm bytes disponíveis
+                int ativos = 0;
+                for (int i = 0; i < m; i++) {
+                    if(temps_dis.get(i) != null){
+                        try {
+                            if (temps_dis.get(i).available() > 0) {
+                                ativos++;
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
-                for (Job job : jobs){
-                    System.out.printf("%s\n", job.toString());
+                // Se só um arquivo ainda tem bytes, finalizamos
+                if (ativos == 1) {
+                    System.out.println("Ordenação concluída! Apenas um arquivo restante.");
+                    break;
+                }
+                while(!finalized(endOfFile)){
+                    ArrayList<Job> jobs = new ArrayList<Job>();
+                    for(int i = 0; i < block_size; i++) {
+                        Job menor = menorRegistro(temps_dis, filePointer, registrosAtuais, endOfFile);
+                        if(menor != null)
+                            jobs.add(menor);
+                        filePointerPrint(filePointer);
+                    }
+                    for (Job job : jobs){
+                        //System.out.printf("%s\n", job.toString());
+                        //temps_dos.get(fileIndex).writeShort(job.getJob_id());
+                        job.toBytes(temps_dos.get(fileIndex), 1, false, 0);
+                    }
+                    fileIndex = (fileIndex + 1) % m;
+                    System.out.printf("Terminou: %s\n", finalized(endOfFile) ? "SIM" : "NAO");
+                }
+                block_size *= m;
+                reloadPointers(temps_dos, temps_dis, temp_path, m);
+
+                for(int i = 0; i < endOfFile.length; i++){
+                    endOfFile[i] = false;
                 }
             }
-
-
+            replaceDatabase(original_db, last_id, temps_dis, temps_dos, temp_path, m);
         } catch (IOException e) {
             System.err.println("Erro em ExternalSort.java, sort");
             e.printStackTrace();
@@ -174,17 +203,28 @@ public class ExternalSort {
         return res;
     }
 
-    public static Job menorRegistro(ArrayList<DataInputStream> dis, int[] indexes, Job[] registrosAtuais) throws IOException {
+    public static Job menorRegistro(ArrayList<DataInputStream> dis, int[] indexes, Job[] registrosAtuais, boolean[] arquivoFinalizado) throws IOException {
         int menorIndex = -1;
         Job menorJob = null;
-        for(int i = 0; i < dis.size(); i++){
-            if (registrosAtuais[i] == null) { // Só lê do arquivo se ainda não temos um job salvo
+    
+        for (int i = 0; i < dis.size(); i++) {
+            if (arquivoFinalizado[i]) continue; // Pula arquivos finalizados
+    
+            // Se não tem um job salvo desse arquivo, lê um novo
+            if (registrosAtuais[i] == null) {
                 DataInputStream stream = dis.get(i);
+    
+                if (stream.available() == 0) { // Chegou ao final do arquivo
+                    arquivoFinalizado[i] = true;
+                    continue;
+                }
+    
                 byte alive = stream.readByte(); // Lápide
                 int recordSize = stream.readInt(); // Tamanho do registro
                 short jobId = stream.readShort(); // ID do registro
                 byte[] data = new byte[recordSize - 3];
                 stream.readFully(data);
+    
                 Job job = SecondaryToPrimary.deserializeJob(data);
                 job.setJob_id(jobId);
                 registrosAtuais[i] = job; // Salva o job lido
@@ -196,15 +236,157 @@ public class ExternalSort {
                 menorIndex = i;
             }
         }
-        System.out.printf("\nMenor Index: %d\n", menorIndex);
-        registrosAtuais[menorIndex] = null;
+    
+        if (menorIndex == -1) return null; // Todos os arquivos terminaram
+        printdoido(registrosAtuais);
+        System.out.printf("\nMenor Index: %d\nJob ID: %s\n", menorIndex, menorJob.getJob_id());
+    
+        registrosAtuais[menorIndex] = null; // Marcar para ser atualizado no próximo loop
+    
+        // Só avança o índice do arquivo que foi lido
         indexes[menorIndex] += 1;
+    
         return menorJob;
     }
-
+    
     public static void filePointerPrint(int[] filePointer){
         for(int i = 0; i < filePointer.length; i++){
             System.out.printf("filePointer[%d] = %d\n", i, filePointer[i]);
         }
+    }
+
+    public static void printdoido(Job[] arr){
+        System.out.println("Array: ");
+        for(int i = 0; i < arr.length; i++){
+            if(arr[i] != null){
+                System.out.printf("[%d] = %d\n", i, arr[i].getJob_id());
+            }
+        }
+    }
+
+    public static void reloadPointers(ArrayList<DataOutputStream> temps_dos, ArrayList<DataInputStream> temps_dis, String temp_path, int m) throws IOException {
+        System.out.println("Fechando arquivos...");
+        for (int i = 0; i < temps_dis.size(); i++) {
+            System.out.println("Fechando leitura de: " + temp_path + "/temp_fos" + i + ".tmp.db");
+            temps_dis.get(i).close();
+        }
+        for (int i = 0; i < temps_dos.size(); i++) {
+            System.out.println("Fechando escrita de: " + temp_path + "/temp_i_fos" + i + ".tmp.db");
+            temps_dos.get(i).flush();
+            temps_dos.get(i).close();
+        }
+        temps_dis.clear();
+        temps_dos.clear();
+        System.gc();
+        // Para cada arquivo, copiamos o conteúdo de temp_i_fos para temp_fos
+        for (int i = 0; i < m; i++) {
+            File source = new File(temp_path + "/temp_i_fos" + i + ".tmp.db");
+            File target = new File(temp_path + "/temp_fos" + i + ".tmp.db");
+            if (!target.renameTo(target)) {
+                System.err.println("Arquivo ainda está em uso: " + target.getAbsolutePath());
+            }
+            // Copia o conteúdo do arquivo fonte para o destino, sobrescrevendo
+            Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            // Opcionalmente, limpamos o arquivo de saída para a próxima rodada:
+            source.delete();
+            source.createNewFile();
+        }
+        
+        // Reabre os streams:
+        // Para entrada: abrimos os arquivos "temp_fos" (agora com o merge feito)
+        // Para saída: abrimos os arquivos "temp_i_fos" (que foram limpos)
+        for (int i = 0; i < m; i++) {
+            FileInputStream fis = new FileInputStream(temp_path + "/temp_fos" + i + ".tmp.db");
+            temps_dis.add(new DataInputStream(fis));
+            
+            FileOutputStream fos = new FileOutputStream(temp_path + "/temp_i_fos" + i + ".tmp.db");
+            temps_dos.add(new DataOutputStream(fos));
+        }
+    }
+
+    public static void replaceDatabase(String originalPath, int last_id, ArrayList<DataInputStream> temps_dis, ArrayList<DataOutputStream> temps_dos, String temp_path, int m) throws IOException {
+        System.out.println("Last ID: " + last_id);
+        // Encontrar o arquivo que ainda tem dados disponíveis
+        File finalSortedFile = null;
+        for (int i = 0; i < m; i++) {
+            File file = new File(temp_path + "/temp_fos" + i + ".tmp.db");
+            if (file.exists() && file.length() > 0) {
+                finalSortedFile = file;
+                break;
+            }
+        }
+
+        if (finalSortedFile == null) {
+            System.err.println("Erro: Nenhum arquivo final encontrado!");
+            return;
+        }
+
+        System.out.println("Substituindo o banco de dados original com o arquivo ordenado: " + finalSortedFile.getAbsolutePath());
+        // Criar um novo arquivo temporário para escrever com o cabeçalho
+        File tempFinalFile = new File(temp_path + "/temp_final.db");
+        FileOutputStream fos = new FileOutputStream(tempFinalFile);
+        DataOutputStream dos = new DataOutputStream(fos);
+
+        // Escrever o cabeçalho (last_id) no novo arquivo
+        dos.writeInt(last_id);
+        
+        // Copiar o conteúdo do arquivo ordenado para o novo arquivo
+        FileInputStream fis = new FileInputStream(finalSortedFile);
+        byte[] buffer = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = fis.read(buffer)) != -1) {
+            fos.write(buffer, 0, bytesRead);
+        }
+
+        // Fechar streams
+        fis.close();
+        fos.close();
+        dos.flush();
+        dos.close();
+        System.gc();
+
+        // Substituir o banco de dados original pelo novo arquivo
+        Files.move(tempFinalFile.toPath(), new File(originalPath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        System.out.println("Banco de dados atualizado com sucesso!");
+
+        for(DataInputStream dis : temps_dis){
+            dis.close();
+        }
+        for(DataOutputStream _dos : temps_dos){
+            _dos.flush();
+            _dos.close();
+        }
+        temps_dis.clear();
+        temps_dos.clear();
+        System.gc();
+
+        // Remover arquivos temporários
+        excluirTemps(temp_path, m);
+    }
+
+    public static void excluirTemps(String temp_path, int m){
+        System.out.println("Removendo arquivos temporários...");
+        for (int i = 0; i < m; i++) {
+            File tempFile1 = new File(temp_path + "/temp_fos" + i + ".tmp.db");
+            File tempFile2 = new File(temp_path + "/temp_i_fos" + i + ".tmp.db");
+    
+            if (tempFile1.exists()) {
+                if (tempFile1.delete()) {
+                    System.out.println("Arquivo deletado: " + tempFile1.getAbsolutePath());
+                } else {
+                    System.err.println("Falha ao deletar: " + tempFile1.getAbsolutePath());
+                }
+            }
+    
+            if (tempFile2.exists()) {
+                if (tempFile2.delete()) {
+                    System.out.println("Arquivo deletado: " + tempFile2.getAbsolutePath());
+                } else {
+                    System.err.println("Falha ao deletar: " + tempFile2.getAbsolutePath());
+                }
+            }
+        }
+        System.out.println("Arquivos temporários removidos!");
     }
 }
