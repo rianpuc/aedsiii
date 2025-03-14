@@ -67,11 +67,11 @@ public class FileParser {
         try {
             JsonNode jsonNode = objectMapper.readTree(row[22]);
             JsonNode websiteNode = jsonNode.get("Website");
-            String website = (websiteNode != null && !websiteNode.asText().isBlank() ? websiteNode.asText() : "None"); //verificando se ha algo no campo website
+            String website = (websiteNode != null && !websiteNode.asText().isBlank() ? websiteNode.asText() : "N/A"); //verificando se ha algo no campo website
             job.setCompany_profile(website);
         } catch (Exception e) {
-            e.printStackTrace();
-            job.setCompany_profile("None"); // caso de erro seta pra uma string falando q n tem nada
+            //e.printStackTrace();
+            job.setCompany_profile("N/A"); // caso de erro seta pra uma string falando q n tem nada
         }
         return job;
     }
