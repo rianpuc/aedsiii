@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 
 import com.aedsiii.puc.model.Job;
 
@@ -136,6 +137,7 @@ public class ExternalSort {
                             jobs.add(menor);
                         filePointerPrint(filePointer);
                     }
+                    Collections.sort(jobs, Comparator.comparingInt(Job::getJob_id));
                     for (Job job : jobs){
                         //System.out.printf("%s\n", job.toString());
                         //temps_dos.get(fileIndex).writeShort(job.getJob_id());

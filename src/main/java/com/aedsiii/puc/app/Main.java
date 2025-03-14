@@ -109,7 +109,7 @@ public class Main {
                     int b_registros = Integer.parseInt(sc.nextLine());
                     System.out.println("Insira o número de caminhos a serem usados: ");
                     int m_caminhos = Integer.parseInt(sc.nextLine());
-                    ExternalSort.sort(b_registros, m_caminhos, SMALL_DB_PATH, EXTERNAL_SORT_PATH, DB_PATH);
+                    ExternalSort.sort(b_registros, m_caminhos, DB_PATH, EXTERNAL_SORT_PATH, DB_PATH);
                     //ExternalSort.test_read(EXTERNAL_SORT_PATH, m_caminhos);
                 case 0:
                     break;
