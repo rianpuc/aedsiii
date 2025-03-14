@@ -15,12 +15,12 @@ public class Main {
     private static final String EXTERNAL_SORT_PATH = "./external_sort";
     public static void printMenu(){
         System.out.printf("\t1. Inserir\n" +
-                          "\t2. Editar\n" +
-                          "\t3. Remover\n" +
-                          "\t4. Mostrar\n" +
-                          "\t5. Get\n" +
+                          "\t2. Get\n" +
+                          "\t3. Editar\n" +
+                          "\t4. Remover\n" +
+                          "\t5. Mostrar todos\n" +
+                          "\t6. Reordenar banco de dados\n" +
                           "\t0. Sair\n" +
-                          "\t20. Reordenar banco de dados\n" +
                           "\tOpcao: ");
     }
     public static void main(String[] args) {
@@ -66,33 +66,7 @@ public class Main {
                         System.out.println("Nova vaga adicionada com sucesso! ID: " + id);
                     }
                     break;
-                case 2: // editJob
-                    System.out.println("Informe o ID da vaga a ser editada: ");
-                    id = Integer.parseInt(sc.nextLine());
-                    boolean status = SecondaryToPrimary.updateJob(id, DB_PATH, sc);
-                    if (status) {
-                        System.out.println("Vaga editada com sucesso! ID: " + id);
-                    } else {
-                        System.out.println("Vaga não encontrada. ID: " + id);
-                    }
-                    break;
-                case 3: // removeJob
-                    System.out.println("Insira o ID: ");
-                    id = Integer.parseInt(sc.nextLine());
-                    boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
-                    if(res){
-                        System.out.println("Registro com ID " + id + " removido!");
-                    } else {
-                        System.out.println("Registro nao encontrado.");
-                    }
-                    break;
-                case 4: // mostrar todos os jobs
-                    ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
-                    for (Job job : jobs) {
-                        System.out.println(job);
-                    }
-                    break;
-                case 5: // getJob
+                case 2: // getJob
                     System.out.println("Insira o ID: ");
                     id = Integer.parseInt(sc.nextLine());
                     Job job = SecondaryToPrimary.getJob(id, DB_PATH);
@@ -103,7 +77,33 @@ public class Main {
                         System.out.println("Registro nao encontrado.");
                     }
                     break;
-                case 20: // ordenação externa
+                case 3: // editJob
+                    System.out.println("Informe o ID da vaga a ser editada: ");
+                    id = Integer.parseInt(sc.nextLine());
+                    boolean status = SecondaryToPrimary.updateJob(id, DB_PATH, sc);
+                    if (status) {
+                        System.out.println("Vaga editada com sucesso! ID: " + id);
+                    } else {
+                        System.out.println("Vaga não encontrada. ID: " + id);
+                    }
+                    break;
+                case 4: // removeJob
+                    System.out.println("Insira o ID: ");
+                    id = Integer.parseInt(sc.nextLine());
+                    boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
+                    if(res){
+                        System.out.println("Registro com ID " + id + " removido!");
+                    } else {
+                        System.out.println("Registro nao encontrado.");
+                    }
+                    break;
+                case 5: // mostrar todos os jobs
+                    ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+                    for (Job job_5 : jobs) {
+                        System.out.println(job_5);
+                    }
+                    break;
+                case 6: // ordenação externa
                     System.out.println("Insira o limite de registros na memória primária: ");
                     int b_registros = Integer.parseInt(sc.nextLine());
                     System.out.println("Insira o número de caminhos a serem usados: ");
