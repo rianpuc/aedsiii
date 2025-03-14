@@ -68,9 +68,14 @@ public class Main {
                     break;
                 case 2: // getJob
                     System.out.println("Insira o ID: ");
-                    id = Integer.parseInt(sc.nextLine());
+                    try {
+                        id = Integer.parseInt(sc.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Tente novamente.");
+                        continue;
+                    }
                     Job job = SecondaryToPrimary.getJob(id, DB_PATH);
-                    if(job.getJob_id() != -1) {
+                    if (job.getJob_id() != -1) {
                         System.out.println(job);
                     }
                     else {
@@ -79,7 +84,12 @@ public class Main {
                     break;
                 case 3: // editJob
                     System.out.println("Informe o ID da vaga a ser editada: ");
-                    id = Integer.parseInt(sc.nextLine());
+                    try {
+                        id = Integer.parseInt(sc.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Por favor, insira um número.");
+                        continue;
+                    }
                     boolean status = SecondaryToPrimary.updateJob(id, DB_PATH, sc);
                     if (status) {
                         System.out.println("Vaga editada com sucesso! ID: " + id);
@@ -89,7 +99,12 @@ public class Main {
                     break;
                 case 4: // removeJob
                     System.out.println("Insira o ID: ");
-                    id = Integer.parseInt(sc.nextLine());
+                    try {
+                        id = Integer.parseInt(sc.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Por favor, insira um número.");
+                        continue;
+                    }
                     boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
                     if(res){
                         System.out.println("Registro com ID " + id + " removido!");
@@ -105,9 +120,21 @@ public class Main {
                     break;
                 case 6: // ordenação externa
                     System.out.println("Insira o limite de registros na memória primária: ");
-                    int b_registros = Integer.parseInt(sc.nextLine());
+                    int b_registros;
+                    try {
+                        b_registros = Integer.parseInt(sc.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Por favor, insira um número.");
+                        continue; // Volta ao início do loop
+                    }
                     System.out.println("Insira o número de caminhos a serem usados: ");
-                    int m_caminhos = Integer.parseInt(sc.nextLine());
+                    int m_caminhos;
+                    try {
+                        m_caminhos = Integer.parseInt(sc.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Por favor, insira um número.");
+                        continue; // Volta ao início do loop
+                    }
                     ExternalSort.sort(b_registros, m_caminhos, DB_PATH, EXTERNAL_SORT_PATH, DB_PATH);
                     //ExternalSort.test_read(EXTERNAL_SORT_PATH, m_caminhos);
                 case 0:
