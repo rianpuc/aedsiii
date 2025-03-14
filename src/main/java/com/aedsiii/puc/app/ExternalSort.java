@@ -126,7 +126,7 @@ public class ExternalSort {
                 }
                 // Se só um arquivo ainda tem bytes, finalizamos
                 if (ativos == 1) {
-                    System.out.println("Ordenação concluída! Apenas um arquivo restante.");
+                    // System.out.println("Ordenação concluída! Apenas um arquivo restante.");
                     break;
                 }
                 while(!finalized(endOfFile)){
@@ -135,7 +135,7 @@ public class ExternalSort {
                         Job menor = menorRegistro(temps_dis, filePointer, registrosAtuais, endOfFile);
                         if(menor != null)
                             jobs.add(menor);
-                        filePointerPrint(filePointer);
+                        // filePointerPrint(filePointer);
                     }
                     Collections.sort(jobs, Comparator.comparingInt(Job::getJob_id));
                     for (Job job : jobs){
@@ -144,7 +144,7 @@ public class ExternalSort {
                         job.toBytes(temps_dos.get(fileIndex), 1, false, 0);
                     }
                     fileIndex = (fileIndex + 1) % m;
-                    System.out.printf("Terminou: %s\n", finalized(endOfFile) ? "SIM" : "NAO");
+                    // System.out.printf("Terminou: %s\n", finalized(endOfFile) ? "SIM" : "NAO");
                 }
                 block_size *= m;
                 reloadPointers(temps_dos, temps_dis, temp_path, m);
@@ -221,7 +221,7 @@ public class ExternalSort {
                     continue;
                 }
     
-                byte alive = stream.readByte(); // Lápide
+                stream.readByte(); // Lápide
                 int recordSize = stream.readInt(); // Tamanho do registro
                 short jobId = stream.readShort(); // ID do registro
                 byte[] data = new byte[recordSize - 3];
@@ -240,8 +240,8 @@ public class ExternalSort {
         }
     
         if (menorIndex == -1) return null; // Todos os arquivos terminaram
-        printdoido(registrosAtuais);
-        System.out.printf("\nMenor Index: %d\nJob ID: %s\n", menorIndex, menorJob.getJob_id());
+        // printdoido(registrosAtuais);
+        // System.out.printf("\nMenor Index: %d\nJob ID: %s\n", menorIndex, menorJob.getJob_id());
     
         registrosAtuais[menorIndex] = null; // Marcar para ser atualizado no próximo loop
     
@@ -267,13 +267,13 @@ public class ExternalSort {
     }
 
     public static void reloadPointers(ArrayList<DataOutputStream> temps_dos, ArrayList<DataInputStream> temps_dis, String temp_path, int m) throws IOException {
-        System.out.println("Fechando arquivos...");
+        // System.out.println("Fechando arquivos...");
         for (int i = 0; i < temps_dis.size(); i++) {
-            System.out.println("Fechando leitura de: " + temp_path + "/temp_fos" + i + ".tmp.db");
+            // System.out.println("Fechando leitura de: " + temp_path + "/temp_fos" + i + ".tmp.db");
             temps_dis.get(i).close();
         }
         for (int i = 0; i < temps_dos.size(); i++) {
-            System.out.println("Fechando escrita de: " + temp_path + "/temp_i_fos" + i + ".tmp.db");
+            // System.out.println("Fechando escrita de: " + temp_path + "/temp_i_fos" + i + ".tmp.db");
             temps_dos.get(i).flush();
             temps_dos.get(i).close();
         }
@@ -285,7 +285,7 @@ public class ExternalSort {
             File source = new File(temp_path + "/temp_i_fos" + i + ".tmp.db");
             File target = new File(temp_path + "/temp_fos" + i + ".tmp.db");
             if (!target.renameTo(target)) {
-                System.err.println("Arquivo ainda está em uso: " + target.getAbsolutePath());
+                // System.err.println("Arquivo ainda está em uso: " + target.getAbsolutePath());
             }
             // Copia o conteúdo do arquivo fonte para o destino, sobrescrevendo
             Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -307,7 +307,7 @@ public class ExternalSort {
     }
 
     public static void replaceDatabase(String originalPath, int last_id, ArrayList<DataInputStream> temps_dis, ArrayList<DataOutputStream> temps_dos, String temp_path, int m) throws IOException {
-        System.out.println("Last ID: " + last_id);
+        // System.out.println("Last ID: " + last_id);
         // Encontrar o arquivo que ainda tem dados disponíveis
         File finalSortedFile = null;
         for (int i = 0; i < m; i++) {
@@ -323,7 +323,7 @@ public class ExternalSort {
             return;
         }
 
-        System.out.println("Substituindo o banco de dados original com o arquivo ordenado: " + finalSortedFile.getAbsolutePath());
+        // System.out.println("Substituindo o banco de dados original com o arquivo ordenado: " + finalSortedFile.getAbsolutePath());
         // Criar um novo arquivo temporário para escrever com o cabeçalho
         File tempFinalFile = new File(temp_path + "/temp_final.db");
         FileOutputStream fos = new FileOutputStream(tempFinalFile);
@@ -368,27 +368,27 @@ public class ExternalSort {
     }
 
     public static void excluirTemps(String temp_path, int m){
-        System.out.println("Removendo arquivos temporários...");
+        // System.out.println("Removendo arquivos temporários...");
         for (int i = 0; i < m; i++) {
             File tempFile1 = new File(temp_path + "/temp_fos" + i + ".tmp.db");
             File tempFile2 = new File(temp_path + "/temp_i_fos" + i + ".tmp.db");
     
             if (tempFile1.exists()) {
                 if (tempFile1.delete()) {
-                    System.out.println("Arquivo deletado: " + tempFile1.getAbsolutePath());
+                    // System.out.println("Arquivo deletado: " + tempFile1.getAbsolutePath());
                 } else {
-                    System.err.println("Falha ao deletar: " + tempFile1.getAbsolutePath());
+                    // System.err.println("Falha ao deletar: " + tempFile1.getAbsolutePath());
                 }
             }
     
             if (tempFile2.exists()) {
                 if (tempFile2.delete()) {
-                    System.out.println("Arquivo deletado: " + tempFile2.getAbsolutePath());
+                    // System.out.println("Arquivo deletado: " + tempFile2.getAbsolutePath());
                 } else {
-                    System.err.println("Falha ao deletar: " + tempFile2.getAbsolutePath());
+                    // System.err.println("Falha ao deletar: " + tempFile2.getAbsolutePath());
                 }
             }
         }
-        System.out.println("Arquivos temporários removidos!");
+        // System.out.println("Arquivos temporários removidos!");
     }
 }
