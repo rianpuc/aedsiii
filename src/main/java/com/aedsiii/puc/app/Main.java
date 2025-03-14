@@ -13,6 +13,7 @@ public class Main {
     private static final String DB_PATH = "binary_db.db";
     private static final String CONFIG_FILE = "config.properties";
     private static final String EXTERNAL_SORT_PATH = "./external_sort";
+
     public static void printMenu(){
         System.out.printf("\t1. Inserir\n" +
                           "\t2. Get\n" +
@@ -52,12 +53,15 @@ public class Main {
         } catch (IOException e){
             e.printStackTrace();
         }
+
         Scanner sc = new Scanner(System.in);
         int answer = -1;
         int id;
+
         while(answer != 0){
             printMenu();
             answer = Integer.parseInt(sc.nextLine());
+
             switch (answer) {
                 case 1: // addJob
                     Job newJob = JobDataCollector.collectJobData(sc);
@@ -125,7 +129,7 @@ public class Main {
                         b_registros = Integer.parseInt(sc.nextLine());
                     } catch (NumberFormatException e) {
                         System.out.println("Entrada inválida. Por favor, insira um número.");
-                        continue; // Volta ao início do loop
+                        continue;
                     }
                     System.out.println("Insira o número de caminhos a serem usados: ");
                     int m_caminhos;
@@ -133,9 +137,11 @@ public class Main {
                         m_caminhos = Integer.parseInt(sc.nextLine());
                     } catch (NumberFormatException e) {
                         System.out.println("Entrada inválida. Por favor, insira um número.");
-                        continue; // Volta ao início do loop
+                        continue;
                     }
-                    ExternalSort.sort(b_registros, m_caminhos, DB_PATH, EXTERNAL_SORT_PATH, DB_PATH);
+                    ExternalSort.sort(b_registros, m_caminhos, DB_PATH, EXTERNAL_SORT_PATH);
+
+                    // Teste leitura da distribuição inicial
                     //ExternalSort.test_read(EXTERNAL_SORT_PATH, m_caminhos);
                 case 0:
                     break;

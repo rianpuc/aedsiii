@@ -12,6 +12,10 @@ import java.util.Scanner;
 import com.aedsiii.puc.model.Job;
 
 public class JobDataCollector { // fiz pra deixar separado a coleta de informações usando o scanner
+
+    /*
+     * Função para criação de um novo job
+     */
     public static Job collectJobData(Scanner sc) { // o id vai ser atribuido no SecondaryToPrimary
         String experience;
         String qualification;
@@ -87,6 +91,9 @@ public class JobDataCollector { // fiz pra deixar separado a coleta de informaç
             job_portal, job_description, benefits, skills, responsibilities, company, company_profile);
     }
 
+    /*
+     * Função para atualizar um job
+     */
     public static Job updateJobData(Scanner sc, Job job) {
         while (true) {
             System.out.println("\tQual atributo você deseja atualizar?");
@@ -209,6 +216,9 @@ public class JobDataCollector { // fiz pra deixar separado a coleta de informaç
         }
     }
 
+    /*
+     * Função auxiliar para criação das listas
+     */
     private static void addToList(Scanner sc, String message, List<String> list) {
         while (true) {
             System.out.println(message);

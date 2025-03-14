@@ -14,6 +14,7 @@ import java.io.File;
 import com.aedsiii.puc.model.Job;
 
 public class SecondaryToPrimary {
+    
     public static int addJob(Job job, String path){
         int last_id = -1;
         try {
@@ -65,6 +66,7 @@ public class SecondaryToPrimary {
         }
         return job;
     }
+
     public static boolean removeJob(int id, String path){
         boolean found = false;
         String tempPath = path + ".tmp";
@@ -72,18 +74,19 @@ public class SecondaryToPrimary {
             FileInputStream fis = new FileInputStream(path);
             DataInputStream dis = new DataInputStream(fis);
 
-            // colocando alterações em um arquivo novo pq n tamo usando RAF ainda, mas no fim só vai mudar o byte de lapide
             FileOutputStream fos = new FileOutputStream(tempPath);
             DataOutputStream dos = new DataOutputStream(fos);
 
-            int lastId = dis.readInt();
+            int lastId = dis.readInt(); // cabeçalho
             dos.writeInt(lastId);
             while (dis.available() > 0) {
-                byte alive = dis.readByte();
+                byte alive = dis.readByte(); // lápide
                 int recordSize = dis.readInt();
                 short jobId = dis.readShort();
-                byte[] data = new byte[recordSize - 3];
+                byte[] data = new byte[recordSize - 3]; // resto do registro
                 dis.readFully(data);
+
+                // encontrou o registro a ser deletado
                 if (jobId == id && alive == 1) {
                     dos.writeByte(0); // 0 = morto
                     found = true;
@@ -94,10 +97,13 @@ public class SecondaryToPrimary {
                 dos.writeShort(jobId);
                 dos.write(data);
             }
+
             fis.close();
             dis.close();
             fos.close();
             dos.close();
+
+            // encontrado = arquivo temp se tornará o novo arquivo .db
             if (found) {
                 File oldFile = new File(path);
                 File newFile = new File(tempPath);
@@ -112,7 +118,8 @@ public class SecondaryToPrimary {
         }
         return found;
     }
-    public static boolean updateJob(int id, String path, Scanner sc) { // n vejo mt sentido em usar 2 arquivos sem raf enquanto usa uma logica de raf com 1 arquivo só, dps a gnt podia tirar essa duvida
+
+    public static boolean updateJob(int id, String path, Scanner sc) {
         boolean status = false;
         boolean found = false;
         Job job = new Job(); // pras iterações
@@ -169,7 +176,8 @@ public class SecondaryToPrimary {
                 }
             }
 
-            if (biggerRecord) { // se o registro for maior que o original, escrever o atualizado no final
+            // se o registro for maior que o original, escrever o atualizado no final
+            if (biggerRecord) {
                 //System.out.println("Escrevendo registro no fim do arquivo: " + biggerRecord);
                 //System.out.println("Job ID: " + job.getJob_id());
                 updatedJob.setJob_id((short) foundId);
@@ -183,6 +191,7 @@ public class SecondaryToPrimary {
             fos.close();
             dos.close();
 
+            // encontrado = arquivo temp se tornará o novo arquivo .db
             if (found) {
                 File oldFile = new File(path);
                 File newFile = new File(tempPath);
@@ -198,12 +207,16 @@ public class SecondaryToPrimary {
         }
         return status;
     }
-    public static ArrayList<Job> toPrimary(String path){ // pegar jobs do db e transformar tudo em uma listona
+
+    /*
+     * Função que transforma todos os registros em uma lista de objetos
+     */
+    public static ArrayList<Job> toPrimary(String path){
         ArrayList<Job> jobs = new ArrayList<Job>();
         try {
             FileInputStream arq = new FileInputStream(path);
             DataInputStream dis = new DataInputStream(arq);
-            dis.readInt(); //pulando o primeiro byte que guarda o ultimo ID cadastrado
+            dis.readInt(); // pulando o primeiro byte que guarda o ultimo ID cadastrado
             while(dis.available() > 0) {
                 Job job = new Job();
                 byte alive = dis.readByte(); // lapide
@@ -224,6 +237,10 @@ public class SecondaryToPrimary {
         }
         return jobs;
     }
+
+    /*
+     * Função auxiliar para editar campos com lista
+     */
     public static void addToList(Scanner sc, String message, List<String> list) {
         while (true) {
             System.out.println(message);
@@ -234,6 +251,10 @@ public class SecondaryToPrimary {
             list.add(input);
         }
     }
+
+    /*
+     * Função auxiliar para ler campos com lista
+     */
     private static List<String> readListBinary(DataInputStream dis) {
         List<String> list = new ArrayList<>();
         try {
@@ -246,6 +267,10 @@ public class SecondaryToPrimary {
         }
         return list;
     }
+
+    /*
+     * Função para transformar registro em objeto
+     */
     protected static Job deserializeJob(byte[] data){
         Job job = new Job();
         try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data))) {
@@ -282,6 +307,6 @@ public class SecondaryToPrimary {
         } catch (Exception e){
             System.err.println("Erro no SecondaryToPrimary.java, DeserializeJob: " + e);
         }
-    return job;
+        return job;
     }
 }

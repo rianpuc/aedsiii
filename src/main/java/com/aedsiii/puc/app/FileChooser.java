@@ -3,6 +3,9 @@ import java.io.File;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+/*
+ * Classe para abrir uma interface de seleção de arquivo
+ */
 public class FileChooser {
     public static String getCSVPath() {
         String filepath = "";
