@@ -1,6 +1,8 @@
 package com.aedsiii.puc.app;
 import java.io.FileReader;
 import java.io.IOException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -61,7 +63,16 @@ public class FileParser {
         job.setSkills(parseList(row[19]));
         job.setResponsibilities(parseList(row[20]));
         job.setCompany(row[21]);
-        job.setCompany_profile(row[22]);
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            JsonNode jsonNode = objectMapper.readTree(row[22]);
+            JsonNode websiteNode = jsonNode.get("Website");
+            String website = (websiteNode != null && !websiteNode.asText().isBlank() ? websiteNode.asText() : "None"); //verificando se ha algo no campo website
+            job.setCompany_profile(website);
+        } catch (Exception e) {
+            e.printStackTrace();
+            job.setCompany_profile("None"); // caso de erro seta pra uma string falando q n tem nada
+        }
         return job;
     }
     private static List<String> parseList(String raw) {

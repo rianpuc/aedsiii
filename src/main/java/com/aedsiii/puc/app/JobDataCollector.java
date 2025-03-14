@@ -198,7 +198,7 @@ public class JobDataCollector { // fiz pra deixar separado a coleta de informaç
                     job.setCompany(sc.nextLine());
                     break;
                 case 22:
-                    System.out.println("Perfil da Empresa (Website, Localização, etc.): ");
+                    System.out.println("Perfil da Empresa (Website): ");
                     job.setCompany_profile(sc.nextLine());
                     break;
                 case 0:
