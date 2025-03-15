@@ -247,6 +247,7 @@ public class Job {
     public void setCompany_profile(String company_profile) {
         this.company_profile = company_profile;
     }
+    
     public String toString(){
         return String.format(
             "Job ID: %d\n" +
@@ -280,6 +281,14 @@ public class Job {
             responsibilities != null ? String.join(", ", responsibilities) : "N/A"
         );
     }
+
+    /**
+     * Função para escrever o objeto no arquivo
+     * @param dos DataOutputStream do arquivo de destino
+     * @param alive determina se o objeto será escrito vivo
+     * @param custom determina se o tamanho em bytes do registro customizado (diferente do seu tamanho real)
+     * @param customRecordSize determina o tamanho customizado do registro caso custom == true. Usado na atualização de Jobs.
+     */
     public void toBytes(DataOutputStream dos, int alive, boolean custom, int customRecordSize){
         try {
             if (alive == 1) {
@@ -323,6 +332,10 @@ public class Job {
             System.err.println("Erro em Job.java, toBytes: ID = " + this.job_id + " Catch = " + e);
         }
     }
+
+    /*
+     * Função para obter o tamanho total em bytes do objeto
+     */
     public int getByteSize(){
         int size = 0;
         size += Short.BYTES; // job_id (short = 2 bytes)
@@ -376,6 +389,9 @@ public class Job {
         return size;
     }
     
+    /*
+     * Função auxiliar para escrever lista no arquivo
+     */
     private void writeListBinary(DataOutputStream dos, List<String> list) {
         if (list != null) {
             try {
@@ -388,6 +404,10 @@ public class Job {
             }
         }
     }
+
+    /*
+     * Função auxiliar para obter tamanho em bytes da lista do objeto
+     */
     private int getListUtfSize(List<String> list) {
         int size = Integer.BYTES; // 4 bytes para o tamanho da lista
         for (String str : list) {
@@ -395,6 +415,10 @@ public class Job {
         }
         return size;
     }
+
+    /*
+     * Função auxilizar para obter tamanho de um atributo string do objeto
+     */
     private int getUtfSize(String str) {
         int utfLength = str.getBytes(StandardCharsets.UTF_8).length; // Caracteres especiais em unicode usam mais de 1 byte
         return 2 + utfLength; // 2 bytes de indicador de tamanho da string

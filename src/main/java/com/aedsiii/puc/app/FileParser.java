@@ -1,6 +1,8 @@
 package com.aedsiii.puc.app;
 import java.io.FileReader;
 import java.io.IOException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -13,13 +15,17 @@ import com.opencsv.exceptions.CsvException;
 import com.aedsiii.puc.model.Job;
 
 public class FileParser {
+
+    /*
+     * Transformação de dados em CSV para lista de objeto
+     */
     public static ArrayList<Job> parseFile(){
         ArrayList<Job> jobs = new ArrayList<Job>();
         try{
             String arquivoPath = FileChooser.getCSVPath();
             try (CSVReader reader = new CSVReader(new FileReader(arquivoPath))) {
                 List<String[]> records = reader.readAll();
-                records.remove(0);
+                records.remove(0); // Remoção da linha de cabeçalho
                 //int count = 0; // PRA DEBUGAR
                 for (String[] row : records) {
                     //if (count >= 1) break; // PRA DEBUGAR
@@ -35,6 +41,10 @@ public class FileParser {
         }
         return jobs;
     }
+
+    /*
+     * Transformar linha do arquivo CSV em objeto Job
+     */
     private static Job parseJob(String[] row){
         Job job = new Job();
         job.setJob_id(Short.parseShort(row[0]));
@@ -61,9 +71,25 @@ public class FileParser {
         job.setSkills(parseList(row[19]));
         job.setResponsibilities(parseList(row[20]));
         job.setCompany(row[21]);
-        job.setCompany_profile(row[22]);
+
+        // Usaremos apenas o website da lista em row[22]
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            JsonNode jsonNode = objectMapper.readTree(row[22]);
+            JsonNode websiteNode = jsonNode.get("Website");
+            String website = (websiteNode != null && !websiteNode.asText().isBlank() ? websiteNode.asText() : "N/A"); //verificando se ha algo no campo website
+            job.setCompany_profile(website);
+        } catch (Exception e) {
+            //e.printStackTrace();
+            job.setCompany_profile("N/A"); // caso de erro seta pra uma string falando q n tem nada
+        }
+        
         return job;
     }
+
+    /*
+     * Função auxilizar a formação de uma lista
+     */
     private static List<String> parseList(String raw) {
         String processed = raw.replaceAll("[{}\"]", ""); // Remover {} e " do campo que conter uma lista
         String[] parts = processed.split(","); // Pegando cada item usando "," como separador
