@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Scanner;
 import com.aedsiii.puc.model.Job;
+import com.aedsiii.puc.model.PaginaBTree;
+import com.aedsiii.puc.model.RegistroBTree;
 
 public class Main {
     private static final String DB_PATH = "binary_db.db";
@@ -21,10 +23,13 @@ public class Main {
                           "\t4. Remover\n" +
                           "\t5. Mostrar todos\n" +
                           "\t6. Reordenar banco de dados\n" +
+                          "\t7. Criar pares offset e id\n" +
+                          "\t8. Criar Árvore B\n" +
+                          "\t9. Printar Árvore B\n" +
                           "\t0. Sair\n" +
                           "\tOpcao: ");
     }
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException{
         Properties config = new Properties();
         File configFile = new File(CONFIG_FILE);
         try {
@@ -57,6 +62,9 @@ public class Main {
         Scanner sc = new Scanner(System.in);
         int answer = -1;
         int id;
+
+        ArrayList<RegistroBTree> registrosBT = new ArrayList<RegistroBTree>();
+        BTree btree = null;
 
         while(answer != 0){
             printMenu();
@@ -143,6 +151,49 @@ public class Main {
 
                     // Teste leitura da distribuição inicial
                     //ExternalSort.test_read(EXTERNAL_SORT_PATH, m_caminhos);
+                case 7:
+                    registrosBT = KeyDataCreator.criarPares(DB_PATH);
+                    for (RegistroBTree reg : registrosBT) {
+                        System.out.println(reg);
+                    }
+                    break;
+                case 8:
+                    if (registrosBT.isEmpty()) {
+                        System.out.println("Use a opção 7 primeiro para criar os pares chave e offset");
+                        continue;
+                    }
+                    System.out.println("Insira a ordem da árvore: ");
+                    int ordem;
+                    try {
+                        ordem = Integer.parseInt(sc.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Por favor, insira um número.");
+                        continue;
+                    }
+                    btree = new BTree(ordem, "test_btree.db", true);
+                    btree.pagina = new PaginaBTree(ordem);
+                    for (RegistroBTree reg : registrosBT) {
+                        btree.create(reg);
+                    }
+                    // btree.print();
+                    // teste procura de registro
+                    RegistroBTree btSearchTest = new RegistroBTree();
+                    btSearchTest = btree.search(8481);
+                    System.out.println(btSearchTest);
+                    btSearchTest = btree.search(3212);
+                    System.out.println(btSearchTest);
+                    btSearchTest = btree.search(5192);
+                    System.out.println(btSearchTest);
+                    btSearchTest = btree.search(6820);
+                    System.out.println(btSearchTest);
+                    break;
+                case 9:
+                    if (btree != null) {
+                        btree.print();
+                    } else {
+                        System.out.println("Árvore vazia.");
+                    }
+                    break;
                 case 0:
                     break;
                 default:
