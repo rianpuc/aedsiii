@@ -10,7 +10,7 @@ import com.aedsiii.puc.model.RegistroBTree;
  */
 public class KeyDataCreator {
     /**
-     * Método para ler o dataset e criar os pares.
+     * Método para ler o dataset e criar registros de Árvore B compostos por ID e offset.
      * 
      * @param path caminho do arquivo dataset.
      */

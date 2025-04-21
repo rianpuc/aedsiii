@@ -97,6 +97,10 @@ public class PaginaBTree {
      * @throws IOException
      */
     public void fromByteArray(byte[] buffer) throws IOException {
+        if (buffer.length != this.tamanho_pagina) {
+            throw new IOException("Tamanho do buffer inválido. Esperado: " + this.tamanho_pagina + ", Recebido: " + buffer.length);
+        }
+
         ByteArrayInputStream ba = new ByteArrayInputStream(buffer);
         DataInputStream dis = new DataInputStream(ba);
 
@@ -112,7 +116,7 @@ public class PaginaBTree {
 
             this.children.add(dis.readLong());
             byte[] ba_registro = new byte[tamanho_key];
-            dis.read(ba_registro);
+            dis.readFully(ba_registro);
             registro.fromByteArray(ba_registro);
 
             this.keys.add(registro);
@@ -120,7 +124,9 @@ public class PaginaBTree {
         }
         // Adicionando próximo ponteiro da página, que não foi lido ainda
         // Ou seja, um ponteiro da direita.
-        this.children.add(dis.readLong());
+        if (this.children.size() < this.max_children) {
+            this.children.add(dis.readLong());
+        }
         /*
          * A página tem tamanho fixo, então caso não esteja cheia, é preciso skippar os bytes
          * (this.max_keys - i): quantidade de elementos ainda não lidos

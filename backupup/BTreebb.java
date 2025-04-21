@@ -1,5 +1,6 @@
 package com.aedsiii.puc.app;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -13,13 +14,13 @@ public class BTree {
     private int max_children;
     public PaginaBTree pagina;
     private RandomAccessFile BTreeFile;
-    
+    private String BTreeFilePath;
+
     // Variáveis de auxílio nas funções recursivas
-    public RegistroBTree auxKey;
+    private RegistroBTree auxKey;
     private long auxPagina;
     private boolean cresceu;
     private boolean diminuiu;
-    public boolean antecessoraPendente;
 
     /**
      * Cria o arquivo da árvore B.
@@ -29,10 +30,12 @@ public class BTree {
      * @throws IOException
      */
     public BTree(int ordem, String BTreeFilePath, boolean makeNewTree) throws IOException {
-        System.out.println("Criando Árvore B de ordem: " + ordem);
+        System.out.println("Criando arvore de ordem: " + ordem);
         this.ordem = ordem;
         this.max_children = this.ordem;
         this.max_keys = this.ordem - 1;
+
+        this.BTreeFilePath = BTreeFilePath;
         
         this.BTreeFile = new RandomAccessFile(BTreeFilePath, "rw");
 
@@ -46,9 +49,6 @@ public class BTree {
             BTreeFile.writeInt(ordem); // Ordem
             BTreeFile.writeLong(-1L); // Endereço da raiz
         }
-
-        this.antecessoraPendente = false;
-        System.out.println("Árvore B criada.");
     }
 
     /**
@@ -84,7 +84,6 @@ public class BTree {
     }
 
     /**
-     * Função auxiliar:
      * Navega recursivamente pela árvore para encontrar um id.
      * @param id id a ser procurado.
      * @param pagina endereço da página a ser acessada.
@@ -126,6 +125,7 @@ public class BTree {
     }
 
     /**
+     * Função auxiliar:
      * Insere um registro na árvore B em arquivo.
      * @param registro registro a ser inserido na árvore B.
      * @return true se o registro for inserido com sucesso, senão false.
@@ -297,14 +297,7 @@ public class BTree {
         return true;
     }
 
-    /**
-     * Remove um registro na árvore B em arquivo.
-     * @param deleteID id a ser deletado.
-     * @return true se for excluído, senão false.
-     * @throws IOException
-     */
-    public boolean delete(short deleteID) throws IOException {
-        // System.out.println("Indo deletar: " + deleteID);
+    public boolean delete(RegistroBTree registro) throws IOException {
         BTreeFile.seek(0);
         BTreeFile.readInt(); // ordem
         long offsetRaiz = BTreeFile.readLong(); // endereço da raiz
@@ -312,12 +305,10 @@ public class BTree {
         // Váriavel global: checagem de remoção de uma página da árvore
         diminuiu = false;
 
-        boolean excluido = delete(deleteID, offsetRaiz);
+        boolean excluido = delete(registro, offsetRaiz);
 
         // Eliminação da raiz
         if (excluido && diminuiu) {
-            BTreeFile.seek(4);
-            offsetRaiz = BTreeFile.readLong();
             BTreeFile.seek(offsetRaiz);
             // Traz página pra memória primária
             PaginaBTree paginaBT = new PaginaBTree(ordem);
@@ -335,20 +326,9 @@ public class BTree {
         return excluido;
     }
 
-    /**
-     * Função auxiliar:
-     * Navega recursivamente até a página correta de remoção, e remove o novo registro.
-     * 
-     * Trata os 4 casos de remoção em árvore B.
-     * 
-     * @param deleteID id a ser deletado. 
-     * @param pagina endereço da página a ser acessada.
-     * @return true se for excluído, senão false.
-     * @throws IOException
-     */
-    private boolean delete(short deleteID, long pagina) throws IOException {
+    private boolean delete(RegistroBTree registro, long pagina) throws IOException {
         boolean excluido = false;
-        // Váriavel para guardar índice do ponteiro de uma página possivelmente diminuida
+        // Váriavel para guardar índice do ponteiro de uma página possivelmente excluída
         int diminuido;
 
         // Se estamos em -1, então estamos no filho de uma folha, o que significa que o registro não foi encontrado
@@ -365,40 +345,31 @@ public class BTree {
         paginaBT.fromByteArray(buffer);
 
         int i = 0;
-        while (i < paginaBT.keys.size() && deleteID > paginaBT.keys.get(i).id) {
+        while (i < paginaBT.keys.size() && registro.id > paginaBT.keys.get(i).id) {
             i++;
         }
 
-        // Colocando aq atrás pra ver se resolve o problema em nós internos
-        diminuido = i; // índice da página possivelmente excluída/diminuida
-
-        if (i < paginaBT.keys.size() && paginaBT.children.get(0) == -1 && deleteID == paginaBT.keys.get(i).id) {
-            // Caso a chave esteja em uma folha (endereço do primeiro ponteiro da pagina = -1)
-            // System.out.println("Chave encontrada em uma folha");
-            // Puxa as chaves após a excluída para a esquerda automaticamente
+        // Caso 1: O elemento está em uma folha e a folha mantém 50% de ocupação
+        if (i < paginaBT.keys.size() && paginaBT.children.get(0) == -1 && registro.id == paginaBT.keys.get(i).id) {
+            System.out.println("Caso 1: Removendo elemento de uma folha com ocupação suficiente.");
             paginaBT.keys.remove(i);
-            paginaBT.children.remove(i+1);
+            paginaBT.children.remove(i + 1);
 
-            // Atualiza página na árvore
+            // Atualiza a página no arquivo
             BTreeFile.seek(pagina);
             BTreeFile.write(paginaBT.toByteArray());
 
-            // Verificar se a página ainda tem a quantidade mínima de chaves por página
             diminuiu = paginaBT.keys.size() < paginaBT.min_keys;
             return true;
         }
 
-        // Caso 2: chave em nó interno. Ela deve ser substituída por sua antecessora.
-        /* INICIO CASO 2 */
-
-        if (i < paginaBT.keys.size() && paginaBT.children.get(0) != -1 && deleteID == paginaBT.keys.get(i).id && antecessoraPendente == false) {
-            // Se o endereço do primeiro ponteiro não for -1, então é um nó interno.
-            // System.out.println("Chave encontrada em um nó interno.");
-            // System.out.println("Buscando antecessor...");
+        // Caso 2: O elemento não está em uma folha, trocá-lo pelo antecessor
+        if (i < paginaBT.keys.size() && paginaBT.children.get(0) != -1 &&  registro.id == paginaBT.keys.get(i).id) {
+            System.out.println("Caso 2: Substituindo elemento pelo antecessor.");
             long endPaginaAntecessor = paginaBT.children.get(i);
             PaginaBTree paginaAntecessor = new PaginaBTree(ordem);
 
-            // Navega até o antecessor
+            // Navega até o antecessor (último elemento da subárvore esquerda)
             while (endPaginaAntecessor != -1) {
                 BTreeFile.seek(endPaginaAntecessor);
                 BTreeFile.read(buffer);
@@ -406,35 +377,26 @@ public class BTree {
                 endPaginaAntecessor = paginaAntecessor.children.get(paginaAntecessor.keys.size());
             }
 
-            // Substitui a chave a ser eliminada por sua antecessora.
+            // Substitui o registro pelo antecessor
             RegistroBTree antecessor = paginaAntecessor.keys.get(paginaAntecessor.keys.size() - 1);
-            // System.out.println("Antecessor encontrado: " + antecessor.id);
             paginaBT.keys.set(i, antecessor);
+
+            // Remove o antecessor recursivamente
+            delete(antecessor, paginaBT.children.get(i));
+
+            // Atualiza a página no arquivo
             BTreeFile.seek(pagina);
             BTreeFile.write(paginaBT.toByteArray());
-
-            // A chave antecessora agora está pendente para ser removida de onde estava anteriormente.
-            antecessoraPendente = true;
-            auxKey = antecessor;
 
             return true;
         }
 
-        /* FIM CASO 2 */
+        // Caso 3 e 4: Continua a busca recursivamente
+        excluido = delete(registro, paginaBT.children.get(i));
+        diminuido = i;
 
-        // Caso a chave ainda não tenha sido encontrada, continua a busca
-        delete(deleteID, paginaBT.children.get(i));
-
-        /* TRATAMENTO DE DIMINUIÇÃO DE CHAVES NAS PÁGINAS ABAIXO */
-        /* CASOS 3 E 4 */
-
-        // Se a página tiver diminuido pra uma quantidade menor do que a mínima de chaves necessárias, será feita uma fusão
+        // Se a página filha ficou com menos de 50% de ocupação
         if (diminuiu) {
-            // Estamos atualmente na recursão: na página pai da página diminuida, para poder ter acesso às suas irmãs
-            // PaginaBT: página atual
-            // PaginaFilha: página com menos chaves do que o necessário
-
-            // Trazendo página com menos chaves do que o necessário para a memória primária
             long endPaginaFilha = paginaBT.children.get(diminuido);
             PaginaBTree paginaFilha = new PaginaBTree(ordem);
             BTreeFile.seek(endPaginaFilha);
@@ -447,7 +409,7 @@ public class BTree {
             PaginaBTree paginaEsq = null;
             PaginaBTree paginaDir = null;
 
-            // Se a página diminuída não for a primeira filha, então ela possui irmã esquerda
+            // Carrega a página irmã esquerda, se existir
             if (diminuido > 0) {
                 endPaginaEsq = paginaBT.children.get(diminuido - 1);
                 BTreeFile.seek(endPaginaEsq);
@@ -455,8 +417,9 @@ public class BTree {
                 paginaEsq = new PaginaBTree(ordem);
                 paginaEsq.fromByteArray(buffer);
             }
-            // Se a página diminuída não for a última, então ela possui irmã direita
-            if (diminuido != paginaBT.keys.size()) {
+
+            // Carrega a página irmã direita, se existir
+            if (diminuido < paginaBT.keys.size()) {
                 endPaginaDir = paginaBT.children.get(diminuido + 1);
                 BTreeFile.seek(endPaginaDir);
                 BTreeFile.read(buffer);
@@ -464,108 +427,39 @@ public class BTree {
                 paginaDir.fromByteArray(buffer);
             }
 
-            /* INICIO CASO 3 */
-
-            /* Se a página da esquerda existe e possui mais chaves do que o mínimo necessário
-             * Etapas:
-             * Identificar a maior chave da página esquerda
-             * Substituir a chave eliminada pela chave pai
-             * Substituir a chave pai pela maior chave da página esquerda
-             */ 
-            if (paginaFilha.children.get(0) == -1 && paginaEsq != null && paginaEsq.keys.size() > paginaBT.min_keys) {
-                // System.out.println("Pagina é folha");
-                // System.out.println("Pagina esquerda existe e POSSUI mais chaves do que o mínimo necessário");
-
-                // Guardando a chave pai
-                RegistroBTree chaveDoPai = paginaBT.keys.get(diminuido - 1);
-                // Substituindo a chave pai pela maior chave da página esquerda
+            // Caso 3: Redistribuição com a página irmã
+            if (paginaEsq != null && paginaEsq.keys.size() > paginaBT.min_keys) {
+                System.out.println("Caso 3: Redistribuição com a página irmã esquerda.");
+                paginaFilha.keys.add(0, paginaBT.keys.get(diminuido - 1));
                 paginaBT.keys.set(diminuido - 1, paginaEsq.keys.remove(paginaEsq.keys.size() - 1));
-                // Removendo ponteiro que não existirá mais na página esquerda
-                paginaFilha.children.add(0, paginaEsq.children.remove(paginaEsq.children.size() - 1));
-                // Substituindo a chave eliminada pela chave pai
-                paginaFilha.keys.add(0, chaveDoPai);
-            }
-
-            // Aqui, significa que a página da esquerda não existe
-
-            /* Se a página da direita existe e possui mais chaves do que o mínimo necessário
-             * Etapas:
-             * Identificar a menor chave da página direita
-             * Substituir a chave eliminada pela chave pai
-             * Substituir a chave pai pela menor chave da página direita
-             */
-            else if (paginaFilha.children.get(0) == -1 && paginaDir != null && paginaDir.keys.size() > paginaBT.min_keys) {
-                // System.out.println("Pagina é folha");
-                // System.out.println("Pagina direita existe e POSSUI mais chaves do que o mínimo necessário");
-
-                // Guardando a chave pai
-                RegistroBTree chaveDoPai;
-                chaveDoPai = paginaBT.keys.get(diminuido);
-                // Substituindo a chave pai pela menor chave da página direita
-                paginaBT.keys.set(diminuido, paginaDir.keys.remove(0));
-                // Removendo ponteiro que não existirá mais na página direita
-                paginaFilha.children.add(paginaDir.children.remove(0));
-                // Substituindo a chave eliminada pela chave pai
-                paginaFilha.keys.add(chaveDoPai);
-            }
-            
-            /* FIM CASO 3 */
-
-            /* INICIO CASO 4 */
-
-            // Se a página da esquerda existir e não possuir mais chaves do que o mínimo necessário
-            else if (paginaEsq != null) {
-                // System.out.println("Pagina esquerda existe e não possui mais chaves do que o mínimo necessário");
-                // Se a página reduzida não for folha, então o elemento
-                // do pai deve descer para o irmão
                 if (paginaFilha.children.get(0) != -1) {
-                    // System.out.println("Pagina não é folha");
-                    paginaEsq.keys.add(paginaBT.keys.remove(diminuido - 1));
-                    paginaEsq.children.add(paginaFilha.children.remove(0));
+                    paginaFilha.children.add(0, paginaEsq.children.remove(paginaEsq.children.size()));
                 }
-                else {
-                    // System.out.println("Pagina é folha");
-                    paginaEsq.keys.add(paginaBT.keys.remove(diminuido - 1));
+            } else if (paginaDir != null && paginaDir.keys.size() > paginaBT.min_keys) {
+                System.out.println("Caso 3: Redistribuição com a página irmã direita.");
+                paginaFilha.keys.add(paginaBT.keys.get(diminuido));
+                paginaBT.keys.set(diminuido, paginaDir.keys.remove(0));
+                if (paginaFilha.children.get(0) != -1) {
+                    paginaFilha.children.add(paginaDir.children.remove(0));
                 }
-                // Remove ponteiro para a própria página
-                paginaBT.children.remove(diminuido);
+            }
 
-                // Copia os registros, fazendo a fusão
+            // Caso 4: Fusão com a página irmã
+            else if (paginaEsq != null) {
+                System.out.println("Caso 4: Fusão com a página irmã esquerda.");
+                paginaEsq.keys.add(paginaBT.keys.remove(diminuido - 1));
                 paginaEsq.keys.addAll(paginaFilha.keys);
                 paginaEsq.children.addAll(paginaFilha.children);
-                paginaFilha.keys.clear();
-                paginaFilha.children.clear();
-            }
-
-            // Se a página da direita existir e não possuir mais chaves do que o mínimo necessário
-            else {
-                System.out.println("Pagina direita existe e não possui mais chaves do que o mínimo necessário");
-                // Se a página reduzida não for folha, então o elemento
-                // do pai deve descer para o irmão
-                if (paginaFilha.children.get(0) != -1) {
-                    // System.out.println("Pagina não é folha");
-                    paginaFilha.keys.add(paginaBT.keys.remove(diminuido));
-                    paginaFilha.children.add(paginaDir.children.remove(0));
-                } else {
-                    System.out.println("Pagina é folha");
-                    paginaFilha.keys.add(paginaBT.keys.remove(diminuido));
-                }
-                // Remove ponteiro pra o irmã da direita
-                paginaBT.children.remove(diminuido + 1);
-
-                // Copia os registros, fazendo a fusão
+                paginaBT.children.remove(diminuido);
+            } else if (paginaDir != null) {
+                System.out.println("Caso 4: Fusão com a página irmã direita.");
+                paginaFilha.keys.add(paginaBT.keys.remove(diminuido));
                 paginaFilha.keys.addAll(paginaDir.keys);
                 paginaFilha.children.addAll(paginaDir.children);
-                paginaDir.keys.clear();
-                paginaDir.children.clear();
+                paginaBT.children.remove(diminuido + 1);
             }
 
-            /* FIM CASO 4 */
-
-            // Verifica se a página pai ficou com menos keys do que o número mínimo necessário
-            diminuiu = paginaBT.keys.size() < paginaBT.min_keys;
-
-            // Atualiza os demais registros
+            // Atualiza as páginas no arquivo
             BTreeFile.seek(pagina);
             BTreeFile.write(paginaBT.toByteArray());
             BTreeFile.seek(endPaginaFilha);
@@ -578,7 +472,11 @@ public class BTree {
                 BTreeFile.seek(endPaginaDir);
                 BTreeFile.write(paginaDir.toByteArray());
             }
+
+            // Verifica se a página pai ficou com menos de 50% de ocupação
+            diminuiu = paginaBT.keys.size() < paginaBT.min_keys;
         }
+
         return excluido;
     }
 

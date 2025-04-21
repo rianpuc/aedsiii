@@ -22,16 +22,16 @@ public class SecondaryToPrimary {
             FileInputStream arq = new FileInputStream(path);
             DataInputStream dis = new DataInputStream(arq);
             last_id = dis.readInt();
+            byte[] resto = arq.readAllBytes();
             arq.close();
             dis.close();
-
-            // Abrindo no modo append pra escrever a partir do final (parametro true)
-            FileOutputStream fos = new FileOutputStream(path, true);
+            last_id += 1; //vai ser adicionado 1 pq vai ser um id novo
+            FileOutputStream fos = new FileOutputStream(path);
             DataOutputStream dos = new DataOutputStream(fos);
-            
-            job.setJob_id((short) (last_id + 1));
+            dos.writeInt(last_id);
+            dos.write(resto);
+            job.setJob_id((short) (last_id));
             job.toBytes(dos, 1, false, 0);
-            last_id += 1;
         } catch (IOException e){
             System.err.println("Erro em SecondaryToPrimary.java, addJob: " + e);
         }
@@ -271,7 +271,7 @@ public class SecondaryToPrimary {
     /*
      * Função para transformar registro em objeto
      */
-    protected static Job deserializeJob(byte[] data){
+    public static Job deserializeJob(byte[] data){
         Job job = new Job();
         try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data))) {
             job.setExperience(dis.readUTF());

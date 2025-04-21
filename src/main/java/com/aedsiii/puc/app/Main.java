@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Scanner;
@@ -15,19 +16,24 @@ public class Main {
     private static final String DB_PATH = "binary_db.db";
     private static final String CONFIG_FILE = "config.properties";
     private static final String EXTERNAL_SORT_PATH = "./external_sort";
+    private static final String BTREE_PATH = "btree.db";
+    private static int BTREE_ORDER = -1;
 
     public static void printMenu(){
-        System.out.printf("\t1. Inserir\n" +
+        System.out.printf("\t1. Inserir\t(Também insere na Árvore B)\n" +
                           "\t2. Get\n" +
                           "\t3. Editar\n" +
                           "\t4. Remover\n" +
                           "\t5. Mostrar todos\n" +
-                          "\t6. Reordenar banco de dados\n" +
-                          "\t7. Criar pares offset e id\n" +
-                          "\t8. Criar Árvore B\n" +
-                          "\t9. Printar Árvore B\n" +
-                          "\t0. Sair\n" +
-                          "\tOpcao: ");
+                          "\t6. Reordenar banco de dados\n");
+
+        System.out.println(BTREE_ORDER != -1 ? "\t7. Criar Árvore B\t(Árvore existente detectada. Ordem atual: " + BTREE_ORDER + ")" : "\t7. Criar Árvore B\t(Nenhuma árvore atualmente criada)");
+
+        System.out.println("\t8. Printar Árvore B\n" +
+                           "\t9. Get usando Árvore B\n" +
+                           "\t10. Teste remoção Árvore B\n" +
+                           "\t0. Sair\n" +
+                           "\tOpcao: ");
     }
     public static void main(String[] args) throws IOException{
         Properties config = new Properties();
@@ -63,8 +69,27 @@ public class Main {
         int answer = -1;
         int id;
 
+        //System.out.println("BTREE_ORDER: " +  BTREE_ORDER);
+
+        // Variáveis auxiliares
+        Job job = new Job();
+        RegistroBTree registroBTree = new RegistroBTree();
         ArrayList<RegistroBTree> registrosBT = new ArrayList<RegistroBTree>();
+
         BTree btree = null;
+        // Verificar se já tem uma árvore B em memória secundária
+        File btreeAuxFile = new File(BTREE_PATH);
+        if (btreeAuxFile.exists()) {
+            RandomAccessFile raf = new RandomAccessFile(btreeAuxFile, "rw");
+
+            if (btreeAuxFile.length() > 4) {
+                BTREE_ORDER = raf.readInt();
+            }
+            raf.close();
+
+            //System.out.println("BTREE_ORDER: " +  BTREE_ORDER);
+            btree = new BTree(BTREE_ORDER, BTREE_PATH, false);
+        }
 
         while(answer != 0){
             printMenu();
@@ -72,10 +97,21 @@ public class Main {
 
             switch (answer) {
                 case 1: // addJob
+                    // Salvando offset da inserção do novo registro
+                    RandomAccessFile addjRaf = new RandomAccessFile(DB_PATH, "rw");
+                    long addJobOffset = addjRaf.length();
+                    addjRaf.close();
                     Job newJob = JobDataCollector.collectJobData(sc);
                     id = SecondaryToPrimary.addJob(newJob, DB_PATH);
                     if(id != -1){
                         System.out.println("Nova vaga adicionada com sucesso! ID: " + id);
+                    }
+
+                    if (BTREE_ORDER != -1) {
+                        RegistroBTree addJobRBT = new RegistroBTree(newJob.getJob_id(), addJobOffset);
+                        btree.create(addJobRBT);
+                    } else {
+                        System.out.println("Nenhuma árvore detectada para inclusão de novo registro na árvore.");
                     }
                     break;
                 case 2: // getJob
@@ -86,7 +122,7 @@ public class Main {
                         System.out.println("Entrada inválida. Tente novamente.");
                         continue;
                     }
-                    Job job = SecondaryToPrimary.getJob(id, DB_PATH);
+                    job = SecondaryToPrimary.getJob(id, DB_PATH);
                     if (job.getJob_id() != -1) {
                         System.out.println(job);
                     }
@@ -121,7 +157,7 @@ public class Main {
                     if(res){
                         System.out.println("Registro com ID " + id + " removido!");
                     } else {
-                        System.out.println("Registro nao encontrado.");
+                        System.out.println("Registro não encontrado.");
                     }
                     break;
                 case 5: // mostrar todos os jobs
@@ -153,13 +189,11 @@ public class Main {
                     //ExternalSort.test_read(EXTERNAL_SORT_PATH, m_caminhos);
                 case 7:
                     registrosBT = KeyDataCreator.criarPares(DB_PATH);
-                    for (RegistroBTree reg : registrosBT) {
-                        System.out.println(reg);
-                    }
-                    break;
-                case 8:
+                    // for (RegistroBTree reg : registrosBT) {
+                    //     System.out.println(reg);
+                    // }
                     if (registrosBT.isEmpty()) {
-                        System.out.println("Use a opção 7 primeiro para criar os pares chave e offset");
+                        System.out.println("Dataset vazio.");
                         continue;
                     }
                     System.out.println("Insira a ordem da árvore: ");
@@ -170,28 +204,56 @@ public class Main {
                         System.out.println("Entrada inválida. Por favor, insira um número.");
                         continue;
                     }
-                    btree = new BTree(ordem, "test_btree.db", true);
+                    btree = new BTree(ordem, BTREE_PATH, true);
                     btree.pagina = new PaginaBTree(ordem);
                     for (RegistroBTree reg : registrosBT) {
                         btree.create(reg);
                     }
-                    // btree.print();
-                    // teste procura de registro
-                    RegistroBTree btSearchTest = new RegistroBTree();
-                    btSearchTest = btree.search(8481);
-                    System.out.println(btSearchTest);
-                    btSearchTest = btree.search(3212);
-                    System.out.println(btSearchTest);
-                    btSearchTest = btree.search(5192);
-                    System.out.println(btSearchTest);
-                    btSearchTest = btree.search(6820);
-                    System.out.println(btSearchTest);
+                    System.out.println("Árvore de ordem [" + ordem + "] criada.");
+                    BTREE_ORDER = ordem;
+                    //System.out.println("BTREE_ORDER: " +  BTREE_ORDER);
                     break;
-                case 9:
+                case 8:
                     if (btree != null) {
                         btree.print();
                     } else {
-                        System.out.println("Árvore vazia.");
+                        System.out.println("Árvore B não criada.");
+                    }
+                    break;
+                case 9:
+                    if (btree == null) {
+                        System.out.println("Árvore B não criada.");
+                        continue;
+                    }
+                    System.out.println("Insira o ID: ");
+                    try {
+                        id = Integer.parseInt(sc.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Por favor, insira um número.");
+                        continue;
+                    }
+                    registroBTree = btree.search(id);
+                    if (registroBTree.id != -1) {
+                        job = OffsetReader.readInOffset(registroBTree.offset, DB_PATH);
+                        System.out.println(job);
+                    } else {
+                        System.out.println("Registro não encontrado.");
+                    }
+                    break;
+                case 10:
+                    short deleteID;
+                    System.out.println("escolhe id");
+                    deleteID = Short.parseShort(sc.nextLine());
+                    boolean deleteCheck = btree.delete(deleteID);
+                    if (deleteCheck) {
+                        System.out.println("Registro com ID " + deleteID + " removido!");
+                    } else {
+                        System.out.println("Registro não encontrado.");
+                    }
+                    if (btree.antecessoraPendente) {
+                        // System.out.println("Indo deletar antecessora pendente: " + btree.auxKey.id);
+                        btree.delete(btree.auxKey.id);
+                        btree.antecessoraPendente = false;
                     }
                     break;
                 case 0:
