@@ -86,7 +86,7 @@ public class HashExtensivel {
             if (full())
                 return false;
             int i = quantidade - 1; // posição do último elemento no cesto
-            while (i >= 0 && elem.hashCode() < elementos.get(i).hashCode())
+            while (i >= 0 && elem.id < elementos.get(i).id)
                 i--;
             elementos.add(i + 1, elem);
             quantidade++;
@@ -175,9 +175,17 @@ public class HashExtensivel {
     }
     protected class Diretorio {
         byte profundidadeGlobal;
+        protected short cestos_quantidade;
         long[] enderecos;
         public Diretorio() {
             profundidadeGlobal = 0;
+            cestos_quantidade = 0;
+            enderecos = new long[1];
+            enderecos[0] = 0;
+        }
+        public Diretorio(int n) {
+            profundidadeGlobal = 0;
+            cestos_quantidade = (short)n;
             enderecos = new long[1];
             enderecos[0] = 0;
         }
@@ -193,6 +201,7 @@ public class HashExtensivel {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeByte(profundidadeGlobal);
+            dos.writeShort(cestos_quantidade);
             int quantidade = (int) Math.pow(2, profundidadeGlobal);
             int i = 0;
             while (i < quantidade) {
@@ -206,6 +215,7 @@ public class HashExtensivel {
             ByteArrayInputStream bais = new ByteArrayInputStream(ba);
             DataInputStream dis = new DataInputStream(bais);
             profundidadeGlobal = dis.readByte();
+            cestos_quantidade = dis.readShort();
             int quantidade = (int) Math.pow(2, profundidadeGlobal);
             enderecos = new long[quantidade];
             int i = 0;
@@ -263,7 +273,7 @@ public class HashExtensivel {
             return Math.abs(chave) % (int) Math.pow(2, pl);
         }
     }
-    public HashExtensivel(int n, String nd, String nc) throws Exception {
+    public HashExtensivel(int n, String nd, String nc, boolean createnew) throws Exception {
             quantidadeDadosPorCesto = n;
             nomeArquivoDiretorio = nd;
             nomeArquivoCestos = nc;
@@ -272,19 +282,24 @@ public class HashExtensivel {
 
             // Se o diretório ou os cestos estiverem vazios, cria um novo diretório e lista
             // de cestos
-            if (arqDiretorio.length() == 0 || arqCestos.length() == 0) {
+            if (createnew || arqDiretorio.length() == 0 || arqCestos.length() == 0) {
+                // Cria um novo diretório, com profundidade de 0 bits (1 único elemento)
+                diretorio = new Diretorio(n);
+                byte[] bd = diretorio.toByteArray();
+                arqDiretorio.write(bd);
 
-            // Cria um novo diretório, com profundidade de 0 bits (1 único elemento)
-            diretorio = new Diretorio();
-            byte[] bd = diretorio.toByteArray();
-            arqDiretorio.write(bd);
-
-            // Cria um cesto vazio, já apontado pelo único elemento do diretório
-            Cesto c = new Cesto(quantidadeDadosPorCesto);
-            bd = c.toByteArray();
-            arqCestos.seek(0);
-            arqCestos.write(bd);
-        }
+                // Cria um cesto vazio, já apontado pelo único elemento do diretório
+                Cesto c = new Cesto(quantidadeDadosPorCesto);
+                bd = c.toByteArray();
+                arqCestos.seek(0);
+                arqCestos.write(bd);
+            } else {
+                byte[] bd = new byte[(int) arqDiretorio.length()];
+                arqDiretorio.seek(0);
+                arqDiretorio.read(bd);
+                diretorio = new Diretorio();
+                diretorio.fromByteArray(bd);
+            }
     }
     public boolean create(RegistroHashExtensivel elem) throws Exception {
         // Carrega TODO o diretório para a memória
@@ -463,5 +478,8 @@ public class HashExtensivel {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    public short cestosSize() {
+        return diretorio.cestos_quantidade;
     }
 }
