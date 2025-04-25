@@ -19,7 +19,9 @@ public class Main {
     private static final String EXTERNAL_SORT_PATH = "./external_sort";
     private static final String HE_PATH = "./hash_extensivel";
     private static final String BTREE_PATH = "btree.db";
+    private static String METHOD = "";
     private static int BTREE_ORDER = -1;
+    private static int HASH_CESTOS = -1;
 
     public static void printMenu(){
         System.out.printf("\t1. Inserir\t(Também insere na Árvore B)\n" +
@@ -38,74 +40,58 @@ public class Main {
                            "\tOpcao: ");
     }
     public static void main(String[] args) throws IOException{
-        HashExtensivel he = null;
-        try {
-            File d = new File(HE_PATH);
-            if(!d.exists()) d.mkdir();
-            he = new HashExtensivel(5, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db");
-        } catch (Exception e) {
-            System.err.println("Erro ao criar HashExtensivel: " + e);
-        }
-        Properties config = new Properties();
-        File configFile = new File(CONFIG_FILE);
-        try {
-            if (configFile.exists()) {
-                try (FileInputStream fis = new FileInputStream(configFile)) {
-                    config.load(fis);
-                }
-            }
-            String dbPath = config.getProperty("binary.path");
-            // String smallDbPath = config.getProperty("small_binary.path");
-            if (dbPath == null || dbPath.isEmpty() /*|| smallDbPath == null || smallDbPath.isEmpty()*/) {
-                // PRIMEIRA ESCOLHA É O DB ORIGINAL
-                ArrayList<Job> jobs = FileParser.parseFile();
-                PrimaryToSecondary.toSecondary(jobs, DB_PATH);
-                config.setProperty("binary.path", DB_PATH);
-
-                // SEGUNDA ESCOLHA É O DB MENOR DE TESTES
-                // ArrayList<Job> smallerJobs = FileParser.parseFile();
-                // PrimaryToSecondary.toSecondary(smallerJobs, "smaller_binary_db.db");
-                // config.setProperty("small_binary.path", "smaller_binary_db.db");
-
-                try (FileOutputStream fos = new FileOutputStream(configFile)) {
-                    config.store(fos,  "Guardando o local do binario");
-                }
-            }
-        } catch (IOException e){
-            e.printStackTrace();
-        }
-
         Scanner sc = new Scanner(System.in);
+        changeIndexMethod(sc, true);
         int answer = -1;
         int id;
-
         //System.out.println("BTREE_ORDER: " +  BTREE_ORDER);
-
         // Variáveis auxiliares
         Job job = new Job();
         RegistroHashExtensivel registroHE = new RegistroHashExtensivel();
         RegistroBTree registroBTree = new RegistroBTree();
-        ArrayList<RegistroBTree> registrosBT = new ArrayList<RegistroBTree>();
-
+        ArrayList<RegistroBTree> registrosBT = new ArrayList<RegistroBTree>();        
+        HashExtensivel he = null;
         BTree btree = null;
-        // Verificar se já tem uma árvore B em memória secundária
-        File btreeAuxFile = new File(BTREE_PATH);
-        if (btreeAuxFile.exists()) {
-            RandomAccessFile raf = new RandomAccessFile(btreeAuxFile, "rw");
-
-            if (btreeAuxFile.length() > 4) {
-                BTREE_ORDER = raf.readInt();
-            }
-            raf.close();
-
-            //System.out.println("BTREE_ORDER: " +  BTREE_ORDER);
-            btree = new BTree(BTREE_ORDER, BTREE_PATH, false);
+        switch (METHOD) {
+            case "btree":
+                // Verificar se já tem uma árvore B em memória secundária
+                File btreeAuxFile = new File(BTREE_PATH);
+                if (btreeAuxFile.exists()) {
+                    RandomAccessFile raf = new RandomAccessFile(btreeAuxFile, "rw");
+                    if (btreeAuxFile.length() > 4) {
+                        BTREE_ORDER = raf.readInt();
+                    }
+                    raf.close();
+                    //System.out.println("BTREE_ORDER: " +  BTREE_ORDER);
+                    btree = new BTree(BTREE_ORDER, BTREE_PATH, false);
+                } else {
+                    registrosBT = KeyDataCreator.criarPares(DB_PATH);
+                    if (registrosBT.isEmpty()) {
+                        System.out.println("Dataset vazio.");
+                        break;
+                    }
+                    btree = new BTree(BTREE_ORDER, BTREE_PATH, true);
+                    btree.pagina = new PaginaBTree(BTREE_ORDER);
+                    for (RegistroBTree reg : registrosBT) {
+                        btree.create(reg);
+                    }
+                    System.out.println("Árvore de ordem [" + BTREE_ORDER + "] criada.");
+                }
+                break;
+            case "hash":
+                try {
+                    File d = new File(HE_PATH);
+                    if(!d.exists()) d.mkdir();
+                    he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db");
+                } catch (Exception e) {
+                    System.err.println("Erro ao criar HashExtensivel: " + e);
+                }
+            default:
+                break;
         }
-
         while(answer != 0){
             printMenu();
             answer = Integer.parseInt(sc.nextLine());
-
             switch (answer) {
                 case 1: // addJob
                     // Salvando offset da inserção do novo registro
@@ -314,6 +300,9 @@ public class Main {
                         System.out.println("Registro não encontrado.");
                     }
                     break;
+                case 14:
+                    changeIndexMethod(sc, false);
+                    break;
                 case 0:
                     break;
                 default:
@@ -321,5 +310,102 @@ public class Main {
             }
         }
         sc.close();
+    }
+    public static void changeIndexMethod(Scanner sc, boolean load) {
+        Properties config = new Properties();
+        File configFile = new File(CONFIG_FILE);
+        try {
+            if (configFile.exists()) {
+                try (FileInputStream fis = new FileInputStream(configFile)) {
+                    config.load(fis);
+                }
+            }
+            String dbPath = config.getProperty("binary.path");
+            // String smallDbPath = config.getProperty("small_binary.path");
+            if (dbPath == null || dbPath.isEmpty() /*|| smallDbPath == null || smallDbPath.isEmpty()*/) {
+                // PRIMEIRA ESCOLHA É O DB ORIGINAL
+                ArrayList<Job> jobs = FileParser.parseFile();
+                PrimaryToSecondary.toSecondary(jobs, DB_PATH);
+                config.setProperty("binary.path", DB_PATH);
+
+                // SEGUNDA ESCOLHA É O DB MENOR DE TESTES
+                // ArrayList<Job> smallerJobs = FileParser.parseFile();
+                // PrimaryToSecondary.toSecondary(smallerJobs, "smaller_binary_db.db");
+                // config.setProperty("small_binary.path", "smaller_binary_db.db");
+
+                try (FileOutputStream fos = new FileOutputStream(configFile)) {
+                    config.store(fos,  "Guardando o local do binario");
+                }
+            }
+            String indexMethod = config.getProperty("index.method");
+            if (!load || indexMethod == null) {
+                int select;
+                System.out.println("Selecione o metodo de armazenamento: \n" + 
+                                    "1. Sequencial\n" +
+                                    "2. B-Tree\n" +
+                                    "3. Hash Extensivel\n" +
+                                    "4. Lista invertida\n");
+                select = Integer.parseInt(sc.nextLine());
+                switch(select){
+                    case 1:
+                        config.setProperty("index.method", "sequencial");
+                        config.remove("btree.ordem");
+                        config.remove("hash.cestos");
+                        break;
+                    case 2:
+                        System.out.println("Digite a ordem da arvore: \n");
+                        int o = Integer.parseInt(sc.nextLine());
+                        config.setProperty("index.method", "btree");
+                        config.setProperty("btree.ordem", "" + o);
+                        config.remove("hash.cestos");
+                        break;
+                    case 3:
+                        System.out.println("Digite o tamanho do cesto: \n");
+                        int c = Integer.parseInt(sc.nextLine());
+                        config.setProperty("index.method", "hash");
+                        config.setProperty("hash.cestos", "" + c);
+                        config.remove("btree.ordem");
+                        break;
+                    case 4:
+                        //lista invertida aqui//
+                        config.setProperty("index.method", "lista");
+                        config.remove("btree.ordem");
+                        config.remove("hash.cestos");
+                        break;
+                    default:
+                        System.out.println("Por favor selecione uma opcao valida.");
+                        return;
+                }
+                try (FileOutputStream fos = new FileOutputStream(configFile)) {
+                    config.store(fos,  "Guardando o index method");
+                }
+                try (FileInputStream fis = new FileInputStream(configFile)) {
+                    config.load(fis);
+                }
+            }
+            METHOD = config.getProperty("index.method");
+            switch (METHOD) {
+                case "sequencial":
+                    System.out.println("Usando método sequencial.");
+                    break;
+                case "btree":
+                    BTREE_ORDER = Integer.parseInt(config.getProperty("btree.ordem"));
+                    System.out.println("Usando B-Tree com ordem " + BTREE_ORDER);
+                    break;
+                case "hash":
+                    HASH_CESTOS = Integer.parseInt(config.getProperty("hash.cestos"));
+                    System.out.println("Usando Hash Extensível com " + HASH_CESTOS + " cestos");
+                    break;
+                case "lista":
+                    System.out.println("Usando lista invertida (ainda não implementada)");
+                    break;
+                default:
+                    System.out.println("Método desconhecido.");
+                    System.out.println(METHOD);
+                    break;
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }
     }
 }
