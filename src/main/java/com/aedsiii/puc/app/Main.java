@@ -11,11 +11,13 @@ import java.util.Scanner;
 import com.aedsiii.puc.model.Job;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
+import com.aedsiii.puc.model.RegistroHashExtensivel;
 
 public class Main {
     private static final String DB_PATH = "binary_db.db";
     private static final String CONFIG_FILE = "config.properties";
     private static final String EXTERNAL_SORT_PATH = "./external_sort";
+    private static final String HE_PATH = "./hash_extensivel";
     private static final String BTREE_PATH = "btree.db";
     private static int BTREE_ORDER = -1;
 
@@ -36,6 +38,14 @@ public class Main {
                            "\tOpcao: ");
     }
     public static void main(String[] args) throws IOException{
+        HashExtensivel he = null;
+        try {
+            File d = new File(HE_PATH);
+            if(!d.exists()) d.mkdir();
+            he = new HashExtensivel(5, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db");
+        } catch (Exception e) {
+            System.err.println("Erro ao criar HashExtensivel: " + e);
+        }
         Properties config = new Properties();
         File configFile = new File(CONFIG_FILE);
         try {
@@ -73,6 +83,7 @@ public class Main {
 
         // Variáveis auxiliares
         Job job = new Job();
+        RegistroHashExtensivel registroHE = new RegistroHashExtensivel();
         RegistroBTree registroBTree = new RegistroBTree();
         ArrayList<RegistroBTree> registrosBT = new ArrayList<RegistroBTree>();
 
@@ -254,6 +265,53 @@ public class Main {
                         // System.out.println("Indo deletar antecessora pendente: " + btree.auxKey.id);
                         btree.delete(btree.auxKey.id);
                         btree.antecessoraPendente = false;
+                    }
+                    break;
+                case 11:
+                    ArrayList<RegistroHashExtensivel> registrosHE = KeyDataCreator.criarParesHE(DB_PATH);
+                    System.out.println("Insira a quantidade de registros no cesto: ");
+                    int qtd;
+                    try {
+                        qtd = Integer.parseInt(sc.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Por favor, insira um número.");
+                        continue;
+                    }
+                    try {
+                        he = new HashExtensivel(qtd, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db");
+                        for(RegistroHashExtensivel reg : registrosHE){
+                            System.out.println("Registros: " + reg);
+                            he.create(reg);
+                        }
+                    } catch (Exception e){
+                        System.err.println("Erro ao criar HashExtensivel Linha 285: " + e);
+                    }
+                case 12:
+                    he.print();
+                    break;
+                case 13:
+                    if (he == null) {
+                        System.out.println("Hash Extensivel não criado.");
+                        continue;
+                    }
+                    System.out.println("Insira o ID: ");
+                    try {
+                        id = Integer.parseInt(sc.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Por favor, insira um número.");
+                        continue;
+                    }
+                    try {
+                        registroHE = he.read(id);
+                        System.out.println(registroHE);
+                    } catch (Exception e){
+                        System.err.println("Erro 307: " + e);
+                    }
+                    if (registroHE.id != -1) {
+                        job = OffsetReader.readInOffset(registroHE.offset, DB_PATH);
+                        System.out.println(job);
+                    } else {
+                        System.out.println("Registro não encontrado.");
                     }
                     break;
                 case 0:
