@@ -422,15 +422,19 @@ public class Main {
                             case "btree":
                                 for (int II_sequential_id : searchResults) {
                                     RegistroBTree rbt_searchedJob = btree.search(II_sequential_id);
-                                    Job searchedJob = OffsetReader.readInOffset(rbt_searchedJob.offset, DB_PATH);
-                                    System.out.println(searchedJob);
+                                    if (rbt_searchedJob != null) {
+                                        Job searchedJob = OffsetReader.readInOffset(rbt_searchedJob.offset, DB_PATH);
+                                        System.out.println(searchedJob);
+                                    }
                                 }
                                 break;
                             case "hash":
                                 for (int II_sequential_id : searchResults) {
                                     RegistroHashExtensivel rhe_searchedJob = he.read(II_sequential_id);
-                                    Job searchedJob = OffsetReader.readInOffset(rhe_searchedJob.offset, DB_PATH);
-                                    System.out.println(searchedJob);
+                                    if (rhe_searchedJob != null) {
+                                        Job searchedJob = OffsetReader.readInOffset(rhe_searchedJob.offset, DB_PATH);
+                                        System.out.println(searchedJob);
+                                    }
                                 }
                                 break;
                             default:
