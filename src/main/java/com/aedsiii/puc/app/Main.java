@@ -48,7 +48,7 @@ public class Main {
                           "\t5.  Mostrar todos\n" +
                           "\t6.  Pesquisar nas listas invertidas\n" +
                           "\t7.  Reordenar banco de dados\n" +
-                          "\t14. Trocar método de armazenamento\n" +
+                          "\t8. Trocar método de armazenamento\n" +
                           "\t21. Mostar lista invertida (DEBUG)\n" +
                           "\t0.  Sair\n");
     }
@@ -228,7 +228,11 @@ public class Main {
                         case "hash":
                             try {
                                 registroHE = he.read(id);
-                                System.out.println(registroHE);
+                                if(registroHE != null){
+                                    System.out.println(registroHE);
+                                } else {
+                                    System.out.println("Registro não encontrado.");
+                                }
                             } catch (Exception e){
                                 System.err.println("Erro 307: " + e);
                             }
@@ -473,7 +477,7 @@ public class Main {
                             break;
                     }
                     break;
-                case 14:
+                case 8:
                     changeIndexMethod(sc, false);
                     break;
                 case 21:
