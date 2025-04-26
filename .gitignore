@@ -4,3 +4,8 @@
 .mvn/
 *.tmp
 *.temp
+*.dat
+/backupup
+/external_sort
+/hash_extensivel
+/smaller_db

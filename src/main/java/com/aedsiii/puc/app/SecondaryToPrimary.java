@@ -2,9 +2,11 @@ package com.aedsiii.puc.app;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.time.Instant;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -12,9 +14,13 @@ import java.io.DataOutputStream;
 import java.io.File;
 
 import com.aedsiii.puc.model.Job;
+import com.aedsiii.puc.model.RegistroBTree;
 
 public class SecondaryToPrimary {
     
+    // Variável auxiliar
+    public static Job auxJob;
+
     public static int addJob(Job job, String path){
         int last_id = -1;
         try {
@@ -118,7 +124,19 @@ public class SecondaryToPrimary {
         }
         return found;
     }
-
+    public static boolean removeJobRAF(int id, String path, long offset){
+        boolean found = false;
+        try {
+            RandomAccessFile raf = new RandomAccessFile(path, "rw");
+            raf.seek(offset);
+            raf.writeByte(0);
+            raf.close();
+            found = true;
+        } catch (IOException e){
+            System.err.println("Erro em SecondaryToPrimary.java, removeJobRAF: " + e);
+        }
+        return found;
+    }
     public static boolean updateJob(int id, String path, Scanner sc) {
         boolean status = false;
         boolean found = false;
@@ -190,7 +208,8 @@ public class SecondaryToPrimary {
             dis.close();
             fos.close();
             dos.close();
-
+            
+            auxJob = updatedJob;
             // encontrado = arquivo temp se tornará o novo arquivo .db
             if (found) {
                 File oldFile = new File(path);
@@ -207,7 +226,137 @@ public class SecondaryToPrimary {
         }
         return status;
     }
+    public static boolean updateJobRAF_BT(int id, String path, Scanner sc, RegistroBTree registroBTree) {
+        long jobOffset = registroBTree.offset;
+        Job job = new Job();
+        Job updatedJob = new Job();
+        boolean status = true;
+        try {
+            RandomAccessFile raf = new RandomAccessFile(path, "rw");
+            raf.seek(jobOffset);
 
+            byte lapide = raf.readByte();
+            if (lapide != 0) {
+                int originalRecordSize = raf.readInt();
+                short jobId = raf.readShort();
+                System.out.println(jobId);
+                byte[] data = new byte[originalRecordSize - 3];
+                raf.readFully(data);
+                job = deserializeJob(data);
+                job.setJob_id(jobId);
+
+                System.out.println("Job encontrado: " + job.getJob_id());
+                updatedJob = JobDataCollector.updateJobData(sc, job);
+                updatedJob.setJob_id(jobId);
+                int newRecordSize = updatedJob.getByteSize();
+
+                if (newRecordSize <= originalRecordSize) {
+                    raf.seek(jobOffset);
+                    System.out.println("Sobrescrevendo, o registro novo é menor que o antigo");
+                    updatedJob.toBytesRAF(raf, lapide, true, originalRecordSize);
+                    int bytesEmBranco = originalRecordSize - newRecordSize;
+                    for (int i = 0; i < bytesEmBranco; i++) {
+                        raf.writeByte(0);
+                    }
+                } else { // Registro atualizado ocupa mais espaço que antes, então matar ele e colocar no final
+                    raf.seek(jobOffset);
+                    System.out.println("Matando o registro atual e criando novo no final: " + raf.length());
+                    raf.writeByte(0);
+                    long newOffset = raf.length();
+                    raf.seek(newOffset);
+                    updatedJob.toBytesRAF(raf, lapide, status, newRecordSize);
+                    registroBTree.offset = newOffset;
+                }
+            } else {
+                status = false;
+            }
+            raf.close();
+            
+            auxJob = updatedJob;
+        } catch (IOException e) {
+            System.err.println("Erro em updateJobRAF_BT: " + e);
+        }
+        return status;
+    }
+
+    public static boolean updateJobRAF(int id, String path, Scanner sc, HashExtensivel he){
+        Job job = new Job();
+        Job updatedJob = new Job();
+        short foundId = 0;
+        boolean status = true;
+        long pos = -1;
+        long foundPos = -1;
+        long newPos = -1;
+        try {
+            RandomAccessFile raf = new RandomAccessFile(path, "rw");
+            raf.readInt();
+            while(raf.getFilePointer() < raf.length()){
+                pos = raf.getFilePointer();
+                System.out.println("Procurando, pos atual: " + pos);
+                byte alive = raf.readByte(); //Ve se ta vivo
+                int originalRecordSize = raf.readInt(); // Lê o tamanho do registro
+                short jobId = raf.readShort(); // Lê o ID do registro
+                byte[] data = new byte[originalRecordSize - 3]; // Já lemos o ID, então o resto é o conteúdo
+                raf.readFully(data);
+                job = deserializeJob(data); // deserialize = transformar array de bytes em objeto
+                job.setJob_id(jobId);
+                System.out.println("Job encontrado: " + job.getJob_id());
+                if(jobId == id && alive == 1){
+                    System.out.println("Encontrado na posição: " + pos);
+                    foundPos = pos;
+                    foundId = jobId;
+                    job.setJob_id(jobId);
+                    updatedJob = JobDataCollector.updateJobData(sc, job);
+                    int newRecordSize = updatedJob.getByteSize(); // tamanho do registro atualizado
+                    if(newRecordSize <= originalRecordSize){
+                        raf.seek(pos);
+                        System.out.println("Sobrescrevendo, o registro novo é menor que o antigo");
+                        updatedJob.toBytesRAF(raf, alive, true, originalRecordSize); // talvez seria melhor se a gnt mudasse o toBytes pra n escrever a lapide e o tamanho do registro? aí faria por fora
+                        int bytesEmBranco = originalRecordSize - newRecordSize;
+                        for (int i = 0; i < bytesEmBranco; i++) {
+                            raf.writeByte(0);
+                        }
+                        status = true;
+                        newPos = foundPos;
+                    } else { // registro atualizado ocupa mais espaço, ent matar o registro aq e colocar o atualizado no final
+                        raf.seek(pos);
+                        System.out.println("Matando o registro atual e criando novo no final: " + raf.length());
+                        raf.writeByte(0); // 0 = morto
+                        raf.writeInt(originalRecordSize);
+                        raf.writeShort(jobId);
+                        raf.write(data);
+                        newPos = raf.length();
+                        raf.seek(newPos);
+                        updatedJob.setJob_id((short)foundId);
+                        updatedJob.toBytesRAF(raf, alive, status, newRecordSize);
+                        //System.out.println("BiggerRecord: " + biggerRecord);
+                    }
+                } else {
+                    raf.seek(pos);
+                    raf.writeByte(alive);
+                    raf.writeInt(originalRecordSize);
+                    raf.writeShort(jobId);
+                    raf.write(data);
+                }
+            }
+            raf.close();
+
+            auxJob = updatedJob;
+
+            System.out.println("newPos: " + newPos + " foundPos: " + foundPos);
+            if(newPos != foundPos){
+                boolean att = he.updateEndereco(updatedJob.getJob_id(), newPos);
+                if(att){
+                    System.out.println("Atualizado no Hash com sucesso!");
+                } else {
+                    System.out.println("Nao encontrado no hash");
+                }
+            }
+        } catch (Exception e){
+            System.err.println("Erro updateJobRAF: " + e);
+        }
+        return status;
+    }
     /*
      * Função que transforma todos os registros em uma lista de objetos
      */
@@ -271,7 +420,7 @@ public class SecondaryToPrimary {
     /*
      * Função para transformar registro em objeto
      */
-    protected static Job deserializeJob(byte[] data){
+    public static Job deserializeJob(byte[] data){
         Job job = new Job();
         try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data))) {
             job.setExperience(dis.readUTF());
