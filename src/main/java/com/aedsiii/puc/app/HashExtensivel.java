@@ -507,7 +507,6 @@ public class HashExtensivel {
                 System.out.println("Endereço: " + arqCestos.getFilePointer());
                 Cesto c = new Cesto(diretorio.cestos_quantidade);
                 byte[] ba = new byte[c.size()];
-                System.out.println("Vou ler: " + c.size() + " bytes");
                 arqCestos.read(ba);
                 c.fromByteArray(ba);
                 System.out.println(c + "\n");
