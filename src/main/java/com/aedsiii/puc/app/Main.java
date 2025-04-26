@@ -290,7 +290,7 @@ public class Main {
                     Job aux_ii_updatedJob = SecondaryToPrimary.auxJob;
 
                     if (aux_ii_updatedJob.getJob_id() != -1) {
-                        termsToUpdate[0] = aux_ii_updatedJob.getRole();
+                        termsToUpdate[0] = aux_ii_updatedJob.getJob_title();
                         termsToUpdate[1] = aux_ii_updatedJob.getRole();
                         for (String string : termsToUpdate) {
                             invertedIndex_JT.delete(string, aux_ii_updatedJob.getJob_id());
@@ -362,7 +362,7 @@ public class Main {
                             break;
                     }
                     if (aux_ii_deletedJob.getJob_id() != -1) {
-                        termsRemoval[0] = aux_ii_deletedJob.getRole();
+                        termsRemoval[0] = aux_ii_deletedJob.getJob_title();
                         termsRemoval[1] = aux_ii_deletedJob.getRole();
                         for (String string : termsRemoval) {
                             invertedIndex_JT.delete(string, aux_ii_deletedJob.getJob_id());
