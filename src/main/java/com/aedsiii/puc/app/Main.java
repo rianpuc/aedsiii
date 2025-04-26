@@ -5,9 +5,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.Properties;
-import java.util.Scanner;
+import java.util.*;
+
+import com.aedsiii.puc.model.InvertedIndex;
 import com.aedsiii.puc.model.Job;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
@@ -23,6 +23,8 @@ public class Main {
     private static int BTREE_ORDER = -1;
     private static int HASH_CESTOS = -1;
     private static boolean FILE_CREATION_NEEDED;
+    private static final String INVERTED_INDEX_JOBTITLE_PATH = "invertedindex_jobtitle.dat";
+    private static final String INVERTED_INDEX_JOBROLE_PATH = "invertedindex_jobrole.dat";
 
     public static void printMenu(){
         System.out.printf("\tMetodo atual:\t");
@@ -39,16 +41,18 @@ public class Main {
             case "lista":
                 break;
         }
-        System.out.printf("\t1. Inserir\n" +
-                          "\t2. Get\n" +
-                          "\t3. Editar\n" +
-                          "\t4. Remover\n" +
-                          "\t5. Mostrar todos\n" +
-                          "\t6. Reordenar banco de dados\n" +
+        System.out.printf("\t1.  Inserir\n" +
+                          "\t2.  Get\n" +
+                          "\t3.  Editar\n" +
+                          "\t4.  Remover\n" +
+                          "\t5.  Mostrar todos\n" +
+                          "\t6.  Pesquisar nas listas invertidas\n" +
+                          "\t7.  Reordenar banco de dados\n" +
                           "\t14. Trocar método de armazenamento\n" +
-                          "\t0. Sair\n");
+                          "\t21. Mostar lista invertida (DEBUG)\n" +
+                          "\t0.  Sair\n");
     }
-    public static void main(String[] args) throws IOException{
+    public static void main(String[] args) throws Exception{
         Scanner sc = new Scanner(System.in);
         changeIndexMethod(sc, true);
         int answer = -1;
@@ -61,6 +65,37 @@ public class Main {
         ArrayList<RegistroBTree> registrosBT = new ArrayList<RegistroBTree>();        
         HashExtensivel he = null;
         BTree btree = null;
+        
+        InvertedIndex invertedIndex_JT = new InvertedIndex();
+        InvertedIndex invertedIndex_JR = new InvertedIndex();
+        File invertedIndex_JT_File = new File(INVERTED_INDEX_JOBTITLE_PATH);
+        File invertedIndex_JR_File = new File(INVERTED_INDEX_JOBROLE_PATH);
+
+        // Listas invertidas com Job Titles e Roles
+        if (invertedIndex_JT_File.exists() && invertedIndex_JR_File.exists()) {
+            invertedIndex_JT.loadFromFile(INVERTED_INDEX_JOBTITLE_PATH);
+            invertedIndex_JR.loadFromFile(INVERTED_INDEX_JOBROLE_PATH);
+            System.out.println("Listas invertidas carregadas.");
+        } else {
+            System.out.println("Criando listas invertidas...");
+            ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+            for (Job job_ii: jobs) {
+                invertedIndex_JT.add(job_ii.getJob_title(), job_ii.getJob_id());
+                invertedIndex_JR.add(job_ii.getRole(), job_ii.getJob_id());
+            }
+            System.out.println("Listas invertidas criadas.");
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                invertedIndex_JT.saveToFile(INVERTED_INDEX_JOBTITLE_PATH);
+                invertedIndex_JR.saveToFile(INVERTED_INDEX_JOBROLE_PATH);
+            } catch (IOException e) {
+                System.err.println("Erro ao salvar listas invertidas.");
+                e.printStackTrace();
+            }
+        }));
+
         while(answer != 0){
             if (FILE_CREATION_NEEDED) {
                 switch (METHOD) {
@@ -78,10 +113,10 @@ public class Main {
                         FILE_CREATION_NEEDED = false;
                         break;
                     case "hash":
-                            try {
-                                File d = new File(HE_PATH);
-                                if(d.exists()) { 
-                                    File diretorioDB = new File(HE_PATH + "/jobs_diretorio.db");
+                        try {
+                            File d = new File(HE_PATH);
+                            if(d.exists()) {
+                                File diretorioDB = new File(HE_PATH + "/jobs_diretorio.db");
                                 File cestosDB = new File(HE_PATH + "/jobs_cestos.db");
                                 he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", false);
                                 if(he.cestosSize() != (short)HASH_CESTOS){
@@ -143,6 +178,11 @@ public class Main {
                     if(id != -1){
                         System.out.println("Nova vaga adicionada com sucesso! ID: " + id);
                     }
+
+                    // Adicionando novos termos nas listas invertidas
+                    invertedIndex_JT.add(newJob.getJob_title(), newJob.getJob_id());
+                    invertedIndex_JR.add(newJob.getRole(), newJob.getJob_id());
+
                     switch(METHOD){
                         case "btree":
                             RegistroBTree addJobRBT = new RegistroBTree(newJob.getJob_id(), addJobOffset);
@@ -245,6 +285,20 @@ public class Main {
                         default:
                             break;
                     }
+
+                    String[] termsToUpdate = new String[2];
+                    Job aux_ii_updatedJob = SecondaryToPrimary.auxJob;
+
+                    if (aux_ii_updatedJob.getJob_id() != -1) {
+                        termsToUpdate[0] = aux_ii_updatedJob.getRole();
+                        termsToUpdate[1] = aux_ii_updatedJob.getRole();
+                        for (String string : termsToUpdate) {
+                            invertedIndex_JT.delete(string, aux_ii_updatedJob.getJob_id());
+                            invertedIndex_JR.delete(string, aux_ii_updatedJob.getJob_id());
+                        }
+                        System.out.println("Lista invertida atualizada após atualização de um registro.");
+                    }
+
                     break;
                 case 4: // removeJob
                     System.out.println("Insira o ID: ");
@@ -254,8 +308,12 @@ public class Main {
                         System.out.println("Entrada inválida. Por favor, insira um número.");
                         continue;
                     }
+                    String[] termsRemoval = new String[2];
+                    Job aux_ii_deletedJob = new Job();
                     switch (METHOD) {
                         case "sequencial":
+                            // Guardando para atualizar lista de termos
+                            aux_ii_deletedJob = SecondaryToPrimary.getJob(id, DB_PATH);
                             boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
                             if(res){
                                 System.out.println("Registro com ID " + id + " removido!");
@@ -267,6 +325,9 @@ public class Main {
                             try {
                                 registroHE = he.read(id);
                                 if(registroHE != null) {
+                                    // Guardando para atualizar lista de termos
+                                    aux_ii_deletedJob = OffsetReader.readInOffset(registroHE.offset, DB_PATH);
+
                                     res = SecondaryToPrimary.removeJobRAF(id, DB_PATH, registroHE.offset);
                                     boolean s = he.delete(id);
                                     if(s) System.out.println("Removido do Hash com sucesso!");
@@ -278,6 +339,11 @@ public class Main {
                             }
                             break;
                         case "btree":
+                            RegistroBTree rbt_aux = new RegistroBTree();
+                            rbt_aux = btree.search(id);
+                            // Guardando para atualizar lista de termos
+                            aux_ii_deletedJob = OffsetReader.readInOffset(rbt_aux.offset, DB_PATH);
+
                             btree.delete(id);
                             res = SecondaryToPrimary.removeJobRAF(id, DB_PATH, btree.auxRemovalOffset);
                             if (res) {
@@ -294,6 +360,15 @@ public class Main {
                             break;
                         default:
                             break;
+                    }
+                    if (aux_ii_deletedJob.getJob_id() != -1) {
+                        termsRemoval[0] = aux_ii_deletedJob.getRole();
+                        termsRemoval[1] = aux_ii_deletedJob.getRole();
+                        for (String string : termsRemoval) {
+                            invertedIndex_JT.delete(string, aux_ii_deletedJob.getJob_id());
+                            invertedIndex_JR.delete(string, aux_ii_deletedJob.getJob_id());
+                        }
+                        System.out.println("Lista invertida atualizada após deleção de um registro.");
                     }
                     break;
                 case 5: // mostrar todos os jobs
@@ -322,7 +397,49 @@ public class Main {
                             break;
                     }
                     break;
-                case 6: // ordenação externa
+                case 6: // Pesquisa usando as listas invertidas
+                    System.out.println("Digite um termo para buscar em nomes de trabalhos e cargos:");
+                    String term = sc.nextLine();
+                    // List<Integer> resultsJT = invertedIndex_JT.search(term);
+                    List<Integer> resultsJR = invertedIndex_JR.search(term);
+                    Set<Integer> union = new HashSet<>(invertedIndex_JT.search(term));
+
+                    // Faz união dos resultados tirando ids duplicados
+                    union.addAll(resultsJR);
+                    List<Integer> searchResults = new ArrayList<>(union);
+
+                    if (searchResults.isEmpty()) {
+                        System.out.println("Nenhum registro encontrado com o termo: \"" + term + "\"");
+                    } else {
+                        System.out.println("Registros encontrados: " + searchResults);
+                        switch (METHOD) {
+                            case "sequencial":
+                                for (int II_sequential_id : searchResults) {
+                                    Job searchedJob = SecondaryToPrimary.getJob(II_sequential_id, DB_PATH);
+                                    System.out.println(searchedJob);
+                                }
+                                break;
+                            case "btree":
+                                for (int II_sequential_id : searchResults) {
+                                    RegistroBTree rbt_searchedJob = btree.search(II_sequential_id);
+                                    Job searchedJob = OffsetReader.readInOffset(rbt_searchedJob.offset, DB_PATH);
+                                    System.out.println(searchedJob);
+                                }
+                                break;
+                            case "hash":
+                                for (int II_sequential_id : searchResults) {
+                                    RegistroHashExtensivel rhe_searchedJob = he.read(II_sequential_id);
+                                    Job searchedJob = OffsetReader.readInOffset(rhe_searchedJob.offset, DB_PATH);
+                                    System.out.println(searchedJob);
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    
+                    break;
+                case 7: // ordenação externa
                     System.out.println("Insira o limite de registros na memória primária: ");
                     int b_registros;
                     try {
@@ -344,6 +461,9 @@ public class Main {
                 case 14:
                     changeIndexMethod(sc, false);
                     break;
+                case 21:
+                    invertedIndex_JT.printIndex();
+                    invertedIndex_JR.printIndex();
                 case 0:
                     break;
                 default:
@@ -381,7 +501,7 @@ public class Main {
                                     "1. Sequencial\n" +
                                     "2. B-Tree\n" +
                                     "3. Hash Extensivel\n" +
-                                    "4. Lista invertida\n");
+                                    "4. Lista invertida (atualmente não faz nada)\n");
                 while (!validInput) {
                     try {
                         select = Integer.parseInt(sc.nextLine());
@@ -415,10 +535,10 @@ public class Main {
                         config.remove("btree.ordem");
                         break;
                     case 4:
-                        //lista invertida aqui//
-                        config.setProperty("index.method", "lista");
-                        config.remove("btree.ordem");
-                        config.remove("hash.cestos");
+                        // //lista invertida aqui//
+                        // config.setProperty("index.method", "lista");
+                        // config.remove("btree.ordem");
+                        // config.remove("hash.cestos");
                         break;
                     default:
                         System.out.println("Por favor selecione uma opção válida.");

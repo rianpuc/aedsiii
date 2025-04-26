@@ -18,6 +18,9 @@ import com.aedsiii.puc.model.RegistroBTree;
 
 public class SecondaryToPrimary {
     
+    // Variável auxiliar
+    public static Job auxJob;
+
     public static int addJob(Job job, String path){
         int last_id = -1;
         try {
@@ -205,7 +208,8 @@ public class SecondaryToPrimary {
             dis.close();
             fos.close();
             dos.close();
-
+            
+            auxJob = updatedJob;
             // encontrado = arquivo temp se tornará o novo arquivo .db
             if (found) {
                 File oldFile = new File(path);
@@ -266,8 +270,9 @@ public class SecondaryToPrimary {
             } else {
                 status = false;
             }
-
             raf.close();
+            
+            auxJob = updatedJob;
         } catch (IOException e) {
             System.err.println("Erro em updateJobRAF_BT: " + e);
         }
@@ -335,6 +340,9 @@ public class SecondaryToPrimary {
                 }
             }
             raf.close();
+
+            auxJob = updatedJob;
+
             System.out.println("newPos: " + newPos + " foundPos: " + foundPos);
             if(newPos != foundPos){
                 boolean att = he.updateEndereco(updatedJob.getJob_id(), newPos);
