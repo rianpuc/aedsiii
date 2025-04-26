@@ -44,7 +44,9 @@ public class Main {
                           "\t3. Editar\n" +
                           "\t4. Remover\n" +
                           "\t5. Mostrar todos\n" +
-                          "\t6. Reordenar banco de dados\n");
+                          "\t6. Reordenar banco de dados\n" +
+                          "\t14. Trocar método de armazenamento\n" +
+                          "\t0. Sair\n");
     }
     public static void main(String[] args) throws IOException{
         Scanner sc = new Scanner(System.in);
@@ -121,7 +123,15 @@ public class Main {
                 }
             }
             printMenu();
-            answer = Integer.parseInt(sc.nextLine());
+            boolean validInput = false;
+            while (!validInput) {
+                try {
+                    answer = Integer.parseInt(sc.nextLine());
+                    validInput = true;
+                } catch (NumberFormatException e) {
+                    System.out.println("Entrada inválida. Insira um número.");
+                }
+            }
             switch (answer) {
                 case 1: // addJob
                     // Salvando offset da inserção do novo registro
