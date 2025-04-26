@@ -440,23 +440,38 @@ public class Main {
                     
                     break;
                 case 7: // ordenação externa
-                    System.out.println("Insira o limite de registros na memória primária: ");
-                    int b_registros;
-                    try {
-                        b_registros = Integer.parseInt(sc.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Entrada inválida. Por favor, insira um número.");
-                        continue;
+                    switch (METHOD) {
+                        case "sequencial":
+                            System.out.println("Insira o limite de registros na memória primária: ");
+                            int b_registros;
+                            try {
+                                b_registros = Integer.parseInt(sc.nextLine());
+                            } catch (NumberFormatException e) {
+                                System.out.println("Entrada inválida. Por favor, insira um número.");
+                                continue;
+                            }
+                            System.out.println("Insira o número de caminhos a serem usados: ");
+                            int m_caminhos;
+                            try {
+                                m_caminhos = Integer.parseInt(sc.nextLine());
+                            } catch (NumberFormatException e) {
+                                System.out.println("Entrada inválida. Por favor, insira um número.");
+                                continue;
+                            }
+                            ExternalSort.sort(b_registros, m_caminhos, DB_PATH, EXTERNAL_SORT_PATH);
+                            break;
+                        case "hash":
+                            System.out.println("Reordenação disponível apenas no armazenamento sequencial.");
+                            System.out.println("Reordene o arquivo no método sequencial e volte aqui para um novo hash.");
+                            break;
+                        case "btree":
+                            System.out.println("Reordenação disponível apenas no armazenamento sequencial.");
+                            System.out.println("Reordene o arquivo no método sequencial e volte aqui para uma nova Árvore B.");
+                            break;
+                        default:
+                            System.out.println("Opção inválida.");
+                            break;
                     }
-                    System.out.println("Insira o número de caminhos a serem usados: ");
-                    int m_caminhos;
-                    try {
-                        m_caminhos = Integer.parseInt(sc.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Entrada inválida. Por favor, insira um número.");
-                        continue;
-                    }
-                    ExternalSort.sort(b_registros, m_caminhos, DB_PATH, EXTERNAL_SORT_PATH);
                     break;
                 case 14:
                     changeIndexMethod(sc, false);
