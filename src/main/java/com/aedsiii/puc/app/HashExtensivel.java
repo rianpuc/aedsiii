@@ -95,7 +95,7 @@ public class HashExtensivel {
 
         // Buscar um elemento no cesto
         public RegistroHashExtensivel read(int chave) {
-            System.out.println("To pegando o elemento no cesto");
+            //System.out.println("To pegando o elemento no cesto");
             if (empty()){
                 //System.out.println("Cesto vazio");
                 return null;
@@ -387,20 +387,20 @@ public class HashExtensivel {
     }
 
     public RegistroHashExtensivel read(int chave) throws Exception {
-        System.out.println("Carregando o diretorio: ");
+        //System.out.println("Carregando o diretorio: ");
         // Carrega o diretório
         byte[] bd = new byte[(int) arqDiretorio.length()];
         arqDiretorio.seek(0);
         arqDiretorio.read(bd);
         diretorio = new Diretorio();
         diretorio.fromByteArray(bd);
-        System.out.println("Diretorio carregado com sucesso.");
+        //System.out.println("Diretorio carregado com sucesso.");
         // Identifica a hash do diretório,
         int i = diretorio.hash(chave);
-        System.out.println("Encontrado o i: " + i);
+        //System.out.println("Encontrado o i: " + i);
         // Recupera o cesto
         long enderecoCesto = diretorio.endereço(i);
-        System.out.println("Endereco do cesto: " + enderecoCesto);
+        //System.out.println("Endereco do cesto: " + enderecoCesto);
         Cesto c = new Cesto(quantidadeDadosPorCesto);
         byte[] ba = new byte[c.size()];
         arqCestos.seek(enderecoCesto);
@@ -467,20 +467,20 @@ public class HashExtensivel {
         return true;
     }
     public boolean updateEndereco(int id, long newOffset) throws Exception{
-        System.out.println("Carregando o diretorio: ");
+        //System.out.println("Carregando o diretorio: ");
         // Carrega o diretório
         byte[] bd = new byte[(int) arqDiretorio.length()];
         arqDiretorio.seek(0);
         arqDiretorio.read(bd);
         diretorio = new Diretorio();
         diretorio.fromByteArray(bd);
-        System.out.println("Diretorio carregado com sucesso.");
+        //System.out.println("Diretorio carregado com sucesso.");
         // Identifica a hash do diretório,
         int i = diretorio.hash(id);
-        System.out.println("Encontrado o i: " + i);
+        //System.out.println("Encontrado o i: " + i);
         // Recupera o cesto
         long enderecoCesto = diretorio.endereço(i);
-        System.out.println("Endereco do cesto: " + enderecoCesto);
+        //System.out.println("Endereco do cesto: " + enderecoCesto);
         Cesto c = new Cesto(quantidadeDadosPorCesto);
         byte[] ba = new byte[c.size()];
         arqCestos.seek(enderecoCesto);

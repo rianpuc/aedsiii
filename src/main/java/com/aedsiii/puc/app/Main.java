@@ -97,6 +97,7 @@ public class Main {
         }));
 
         while(answer != 0){
+            registroHE = null;
             if (FILE_CREATION_NEEDED) {
                 switch (METHOD) {
                     case "btree":
@@ -228,15 +229,10 @@ public class Main {
                         case "hash":
                             try {
                                 registroHE = he.read(id);
-                                if(registroHE != null){
-                                    System.out.println(registroHE);
-                                } else {
-                                    System.out.println("Registro não encontrado.");
-                                }
                             } catch (Exception e){
                                 System.err.println("Erro 307: " + e);
                             }
-                            if (registroHE.id != -1) {
+                            if (registroHE != null && registroHE.id != -1) {
                                 job = OffsetReader.readInOffset(registroHE.offset, DB_PATH);
                                 System.out.println(job);
                             } else {
