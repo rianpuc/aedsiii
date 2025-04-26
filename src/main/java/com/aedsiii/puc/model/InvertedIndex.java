@@ -31,7 +31,7 @@ public class InvertedIndex {
      */
     public void add(String string, int recordId) {
         if (recordId == -1) {
-            System.err.println("ID inválido: -1. Não adicionado.");
+            //System.err.println("ID inválido: -1. Não adicionado.");
             return;
         }
 
@@ -41,7 +41,7 @@ public class InvertedIndex {
         for (String word : words) {
             // Verifica se a palavra é relevante
             if (WordFilter.contains(word)) {
-                System.out.println("Termo irrelevante ignorado: " + word);
+                //System.out.println("Termo irrelevante ignorado: " + word);
                 continue;
             }
 

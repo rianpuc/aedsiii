@@ -67,7 +67,7 @@ public class HashExtensivel {
             profundidadeLocal = dis.readByte();
             quantidade = dis.readShort();
             int i = 0;
-            System.out.println("Profundidade Local: " + profundidadeLocal + " Qtd de elementos: " + quantidade);
+            // System.out.println("Profundidade Local: " + profundidadeLocal + " Qtd de elementos: " + quantidade);
             elementos = new ArrayList<RegistroHashExtensivel>(quantidadeMaxima);
             byte[] dados = new byte[bytesPorElemento];
             RegistroHashExtensivel elem;
@@ -75,7 +75,7 @@ public class HashExtensivel {
                 dis.read(dados);
                 elem = new RegistroHashExtensivel();
                 elem.fromByteArray(dados);
-                System.out.println("Elemento " + i + " : " + elem);
+                // System.out.println("Elemento " + i + " : " + elem);
                 elementos.add(elem);
                 i++;
             }
