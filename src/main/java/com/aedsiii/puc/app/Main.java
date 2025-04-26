@@ -515,12 +515,11 @@ public class Main {
                 System.out.println("Selecione o metodo de armazenamento: \n" + 
                                     "1. Sequencial\n" +
                                     "2. B-Tree\n" +
-                                    "3. Hash Extensivel\n" +
-                                    "4. Lista invertida (atualmente não faz nada)\n");
+                                    "3. Hash Extensivel\n");
                 while (!validInput) {
                     try {
                         select = Integer.parseInt(sc.nextLine());
-                        if (select > 0 && select <= 4) {
+                        if (select > 0 && select <= 3) {
                             validInput = true;
                         } else {
                             System.out.println("Por favor selecione uma opção válida.");
@@ -548,12 +547,6 @@ public class Main {
                         config.setProperty("index.method", "hash");
                         config.setProperty("hash.cestos", "" + c);
                         config.remove("btree.ordem");
-                        break;
-                    case 4:
-                        // //lista invertida aqui//
-                        // config.setProperty("index.method", "lista");
-                        // config.remove("btree.ordem");
-                        // config.remove("hash.cestos");
                         break;
                     default:
                         System.out.println("Por favor selecione uma opção válida.");
