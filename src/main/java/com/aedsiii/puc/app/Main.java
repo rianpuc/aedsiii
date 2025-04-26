@@ -236,13 +236,31 @@ public class Main {
                         System.out.println("Entrada inválida. Por favor, insira um número.");
                         continue;
                     }
-                    boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
-                    if(res){
-                        System.out.println("Registro com ID " + id + " removido!");
-                    } else {
-                        System.out.println("Registro não encontrado.");
+                    switch (METHOD) {
+                        case "sequencial":
+                            boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
+                            if(res){
+                                System.out.println("Registro com ID " + id + " removido!");
+                            } else {
+                                System.out.println("Registro não encontrado.");
+                            }
+                            break;
+                        case "hash":
+                            try {
+                                registroHE = he.read(id);
+                                if(registroHE != null) {
+                                    res = SecondaryToPrimary.removeJobRAF(id, DB_PATH, registroHE.offset);
+                                    boolean s = he.delete(id);
+                                    if(s) System.out.println("Removido do hash com sucesso!");
+                                } else {
+                                    System.out.println("Registro nao encontrado.");
+                                }
+                            } catch (Exception e) {
+                                System.err.println("Erro removerJobRAF: " + e);
+                            }
+                        default:
+                            break;
                     }
-                    break;
                 case 5: // mostrar todos os jobs
                     switch (METHOD) {
                         case "sequencial":

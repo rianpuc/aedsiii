@@ -123,7 +123,19 @@ public class SecondaryToPrimary {
         }
         return found;
     }
-
+    public static boolean removeJobRAF(int id, String path, long offset){
+        boolean found = false;
+        try {
+            RandomAccessFile raf = new RandomAccessFile(path, "rw");
+            raf.seek(offset);
+            raf.writeByte(0);
+            raf.close();
+            found = true;
+        } catch (IOException e){
+            System.err.println("Erro em SecondaryToPrimary.java, removeJobRAF: " + e);
+        }
+        return found;
+    }
     public static boolean updateJob(int id, String path, Scanner sc) {
         boolean status = false;
         boolean found = false;

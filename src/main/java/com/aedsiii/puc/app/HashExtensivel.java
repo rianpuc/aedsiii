@@ -150,7 +150,7 @@ public class HashExtensivel {
             int i = 0;
             while (i < quantidade && chave > elementos.get(i).id)
                 i++;
-            if (chave == elementos.get(i).hashCode()) {
+            if (chave == elementos.get(i).id) {
                 elementos.remove(i);
                 quantidade--;
                 return true;
