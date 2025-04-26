@@ -23,7 +23,10 @@ public class BTree {
     private boolean cresceu;
     private boolean diminuiu;
     public boolean antecessoraPendente;
+    // OFFSET DO REGISTRO A SER REMOVIDO NO DATASET
     public long auxRemovalOffset;
+    // OFFSET DO CAMPO LONG NO REGISTRO BTREE
+    public long auxUpdateOffset;
 
     /**
      * Cria o arquivo da árvore B.
@@ -53,6 +56,7 @@ public class BTree {
 
         this.antecessoraPendente = false;
         this.auxRemovalOffset = -1;
+        this.auxUpdateOffset = -1;
         System.out.println("Árvore B criada.");
     }
 
@@ -118,8 +122,18 @@ public class BTree {
 
         // Verificar se encontrou o id
         if (i < paginaBT.keys.size() && paginaBT.keys.get(i).id == id) {
+            BTreeFile.seek(pagina);
+            BTreeFile.readInt(); // Número de elementos na página
+            // Endereços a se skippar
+            int keyBytesSkip = RegistroBTree.size() * i;
+            // Ponteiros a se skippar
+            int pointerBytesSkip = Long.BYTES * (i + 1);
+            BTreeFile.skipBytes(keyBytesSkip + pointerBytesSkip);
+            // só pra verificar o ID
+            System.out.println(BTreeFile.readShort());
+            auxUpdateOffset = BTreeFile.getFilePointer();
             return paginaBT.keys.get(i);
-        } 
+        }
         
         // Verificar se i não ultrapassou o número de ponteiros (mas acho q n vai acontecer)
         if (i < paginaBT.children.size()) {
@@ -587,6 +601,20 @@ public class BTree {
             }
         }
         return excluido;
+    }
+
+    /**
+     * Função auxiliar de update. Atualiza o offset de um registro atualizado, para refletir seu novo local no dataset.
+     * @param datasetOffset Offset do novo local do registro no dataset.
+     * @throws IOException
+     */
+    public void updateOffset(long datasetOffset) throws IOException {
+        try {
+            BTreeFile.seek(auxUpdateOffset);
+            BTreeFile.writeLong(datasetOffset);
+        } catch (IOException e) {
+            System.out.println("Erro em Btree.updateOffset: " + e);
+        }
     }
 
     /**

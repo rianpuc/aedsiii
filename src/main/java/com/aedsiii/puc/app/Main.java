@@ -73,7 +73,6 @@ public class Main {
                         for (RegistroBTree reg : registrosBT) {
                             btree.create(reg);
                         }
-                        registrosBT = KeyDataCreator.criarPares(DB_PATH);
                         FILE_CREATION_NEEDED = false;
                         break;
                     case "hash":
@@ -220,6 +219,18 @@ public class Main {
                             }
                             break;
                         case "btree":
+                            registroBTree = btree.search(id);
+                            if (registroBTree.id != -1) {
+                                System.out.println("encontrado");
+                                status = SecondaryToPrimary.updateJobRAF_BT(id, DB_PATH, sc, registroBTree);
+                                if (status) {
+                                    // System.out.println("Novo offset: " + registroBTree.offset);
+                                    System.out.println("Vaga editada com sucesso! ID: " + id);
+                                    btree.updateOffset(registroBTree.offset);
+                                }
+                            } else {
+                                System.out.println("Vaga não encontrada. ID: " + id);
+                            }
                             break;
                         default:
                             break;
@@ -401,7 +412,7 @@ public class Main {
                         break;
                     default:
                         System.out.println("Por favor selecione uma opção válida.");
-                        return;
+                        break;
                 }
                 try (FileOutputStream fos = new FileOutputStream(configFile)) {
                     config.store(fos,  "Guardando o index method");

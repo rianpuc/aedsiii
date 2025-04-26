@@ -14,6 +14,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 
 import com.aedsiii.puc.model.Job;
+import com.aedsiii.puc.model.RegistroBTree;
 
 public class SecondaryToPrimary {
     
@@ -221,6 +222,58 @@ public class SecondaryToPrimary {
         }
         return status;
     }
+    public static boolean updateJobRAF_BT(int id, String path, Scanner sc, RegistroBTree registroBTree) {
+        long jobOffset = registroBTree.offset;
+        Job job = new Job();
+        Job updatedJob = new Job();
+        boolean status = true;
+        try {
+            RandomAccessFile raf = new RandomAccessFile(path, "rw");
+            raf.seek(jobOffset);
+
+            byte lapide = raf.readByte();
+            if (lapide != 0) {
+                int originalRecordSize = raf.readInt();
+                short jobId = raf.readShort();
+                System.out.println(jobId);
+                byte[] data = new byte[originalRecordSize - 3];
+                raf.readFully(data);
+                job = deserializeJob(data);
+                job.setJob_id(jobId);
+
+                System.out.println("Job encontrado: " + job.getJob_id());
+                updatedJob = JobDataCollector.updateJobData(sc, job);
+                updatedJob.setJob_id(jobId);
+                int newRecordSize = updatedJob.getByteSize();
+
+                if (newRecordSize <= originalRecordSize) {
+                    raf.seek(jobOffset);
+                    System.out.println("Sobrescrevendo, o registro novo é menor que o antigo");
+                    updatedJob.toBytesRAF(raf, lapide, true, originalRecordSize);
+                    int bytesEmBranco = originalRecordSize - newRecordSize;
+                    for (int i = 0; i < bytesEmBranco; i++) {
+                        raf.writeByte(0);
+                    }
+                } else { // Registro atualizado ocupa mais espaço que antes, então matar ele e colocar no final
+                    raf.seek(jobOffset);
+                    System.out.println("Matando o registro atual e criando novo no final: " + raf.length());
+                    raf.writeByte(0);
+                    long newOffset = raf.length();
+                    raf.seek(newOffset);
+                    updatedJob.toBytesRAF(raf, lapide, status, newRecordSize);
+                    registroBTree.offset = newOffset;
+                }
+            } else {
+                status = false;
+            }
+
+            raf.close();
+        } catch (IOException e) {
+            System.err.println("Erro em updateJobRAF_BT: " + e);
+        }
+        return status;
+    }
+
     public static boolean updateJobRAF(int id, String path, Scanner sc, HashExtensivel he){
         Job job = new Job();
         Job updatedJob = new Job();
@@ -244,7 +297,7 @@ public class SecondaryToPrimary {
                 job.setJob_id(jobId);
                 System.out.println("Job encontrado: " + job.getJob_id());
                 if(jobId == id && alive == 1){
-                    System.out.println("Achei na posicao: " + pos);
+                    System.out.println("Encontrado na posição: " + pos);
                     foundPos = pos;
                     foundId = jobId;
                     job.setJob_id(jobId);
@@ -252,7 +305,7 @@ public class SecondaryToPrimary {
                     int newRecordSize = updatedJob.getByteSize(); // tamanho do registro atualizado
                     if(newRecordSize <= originalRecordSize){
                         raf.seek(pos);
-                        System.out.println("Sobrescrevendo, o registro novo eh menor que o antigo");
+                        System.out.println("Sobrescrevendo, o registro novo é menor que o antigo");
                         updatedJob.toBytesRAF(raf, alive, true, originalRecordSize); // talvez seria melhor se a gnt mudasse o toBytes pra n escrever a lapide e o tamanho do registro? aí faria por fora
                         int bytesEmBranco = originalRecordSize - newRecordSize;
                         for (int i = 0; i < bytesEmBranco; i++) {
