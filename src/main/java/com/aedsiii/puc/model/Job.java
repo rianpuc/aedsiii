@@ -1,5 +1,6 @@
 package com.aedsiii.puc.model;
 import java.io.DataOutputStream;
+import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -332,6 +333,49 @@ public class Job {
             System.err.println("Erro em Job.java, toBytes: ID = " + this.job_id + " Catch = " + e);
         }
     }
+    public void toBytesRAF(RandomAccessFile raf, int alive, boolean custom, int customRecordSize){
+        try {
+            if (alive == 1) {
+                raf.writeByte(1); // lápide (1 = vivo)
+            } else {
+                raf.writeByte(0);
+            }
+            if (custom) { // customRecordSize vai ser usado pra manter o tamanho original do registro no updateJobs
+                raf.writeInt(customRecordSize);
+            } else {
+                raf.writeInt(getByteSize());
+            }
+            //System.out.printf("ID: %d, Bytes: %d\n", this.job_id, getByteSize());
+            raf.writeShort(this.job_id);
+            raf.writeUTF(this.experience);
+            raf.writeUTF(this.qualification);
+            raf.writeUTF(this.salary_range);
+            raf.writeUTF(this.location);
+            raf.writeUTF(this.country);
+            raf.writeFloat(this.latitude);
+            raf.writeFloat(this.longitude);
+            raf.writeUTF(this.work_type);
+            raf.writeInt(this.company_size);
+            raf.writeLong(this.job_posting_date.getEpochSecond());
+            raf.writeByte(6);
+            String preference = this.preference;
+            while(preference.length() < 6) preference += " ";
+            raf.write(preference.substring(0, 6).getBytes()); // STRING FIXA DE TAMANHO 6
+            raf.writeUTF(this.contact_person);
+            raf.writeUTF(this.contact);
+            raf.writeUTF(this.job_title);
+            raf.writeUTF(this.role);
+            raf.writeUTF(this.job_portal);
+            raf.writeUTF(this.job_description);
+            writeListBinaryRAF(raf, this.benefits);
+            writeListBinaryRAF(raf, this.skills);
+            writeListBinaryRAF(raf, this.responsibilities);
+            raf.writeUTF(this.company);
+            raf.writeUTF(this.company_profile);
+        } catch (Exception e) {
+            System.err.println("Erro em Job.java, toBytes: ID = " + this.job_id + " Catch = " + e);
+        }
+    }
 
     /*
      * Função para obter o tamanho total em bytes do objeto
@@ -398,6 +442,18 @@ public class Job {
                 dos.writeInt(list.size()); // Campo para número de itens na lista
                 for (String item : list){
                     dos.writeUTF(item);
+                }
+            } catch (Exception e) {
+                System.err.println("Erro em writeListBinary, Registro.java: " + e);
+            }
+        }
+    }
+    private void writeListBinaryRAF(RandomAccessFile raf, List<String> list) {
+        if (list != null) {
+            try {
+                raf.writeInt(list.size()); // Campo para número de itens na lista
+                for (String item : list){
+                    raf.writeUTF(item);
                 }
             } catch (Exception e) {
                 System.err.println("Erro em writeListBinary, Registro.java: " + e);

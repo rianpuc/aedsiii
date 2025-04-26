@@ -93,6 +93,8 @@ public class Main {
                             File cestosDB = new File(HE_PATH + "/jobs_cestos.db");
                             he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", false);
                             if(he.cestosSize() != (short)HASH_CESTOS){
+                                he = null;
+                                System.gc();
                                 diretorioDB.delete();
                                 cestosDB.delete();
                                 ArrayList<RegistroHashExtensivel> registrosHE = KeyDataCreator.criarParesHE(DB_PATH);
@@ -206,11 +208,24 @@ public class Main {
                         System.out.println("Entrada inválida. Por favor, insira um número.");
                         continue;
                     }
-                    boolean status = SecondaryToPrimary.updateJob(id, DB_PATH, sc);
-                    if (status) {
-                        System.out.println("Vaga editada com sucesso! ID: " + id);
-                    } else {
-                        System.out.println("Vaga não encontrada. ID: " + id);
+                    switch (METHOD) {
+                        case "sequencial":
+                            boolean status = SecondaryToPrimary.updateJob(id, DB_PATH, sc);
+                            if (status) {
+                                System.out.println("Vaga editada com sucesso! ID: " + id);
+                            } else {
+                                System.out.println("Vaga não encontrada. ID: " + id);
+                            }
+                            break;
+                        case "hash":
+                            status = SecondaryToPrimary.updateJobRAF(id, DB_PATH, sc, he);
+                            if (status) {
+                                System.out.println("Vaga editada com sucesso! ID: " + id);
+                            } else {
+                                System.out.println("Vaga não encontrada. ID: " + id);
+                            }
+                        default:
+                            break;
                     }
                     break;
                 case 4: // removeJob

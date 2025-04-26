@@ -27,7 +27,7 @@ public class HashExtensivel {
         ArrayList<RegistroHashExtensivel> elementos; // sequência de elementos armazenados
 
         public Cesto(int qtdmax) throws Exception {
-        this(qtdmax, 0);
+            this(qtdmax, 0);
         }
 
         public Cesto(int qtdmax, int pl) throws Exception {
@@ -122,21 +122,33 @@ public class HashExtensivel {
             if (empty())
                 return false;
             int i = 0;
-            while (i < quantidade && elem.hashCode() > elementos.get(i).hashCode())
+            while (i < quantidade && elem.id > elementos.get(i).id)
                 i++;
-            if (i < quantidade && elem.hashCode() == elementos.get(i).hashCode()) {
+            if (i < quantidade && elem.id == elementos.get(i).id) {
                 elementos.set(i, elem);
                 return true;
             } else
                 return false;
         }
 
-        // pagar um elemento do cesto
+        public boolean atualizarEnd(int chave, long newOffset){
+            if(empty()) return false;
+            int i = 0;
+            while(i < quantidade && chave > elementos.get(i).id) i++;
+            if(i < quantidade && chave == elementos.get(i).id){
+                elementos.get(i).offset = newOffset;
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        // apagar um elemento do cesto
         public boolean delete(int chave) {
             if (empty())
                 return false;
             int i = 0;
-            while (i < quantidade && chave > elementos.get(i).hashCode())
+            while (i < quantidade && chave > elementos.get(i).id)
                 i++;
             if (chave == elementos.get(i).hashCode()) {
                 elementos.remove(i);
@@ -406,7 +418,7 @@ public class HashExtensivel {
         diretorio.fromByteArray(bd);
 
         // Identifica a hash do diretório,
-        int i = diretorio.hash(elem.hashCode());
+        int i = diretorio.hash(elem.id);
 
         // Recupera o cesto
         long enderecoCesto = diretorio.endereço(i);
@@ -454,7 +466,31 @@ public class HashExtensivel {
         arqCestos.write(c.toByteArray());
         return true;
     }
-
+    public boolean updateEndereco(int id, long newOffset) throws Exception{
+        System.out.println("Carregando o diretorio: ");
+        // Carrega o diretório
+        byte[] bd = new byte[(int) arqDiretorio.length()];
+        arqDiretorio.seek(0);
+        arqDiretorio.read(bd);
+        diretorio = new Diretorio();
+        diretorio.fromByteArray(bd);
+        System.out.println("Diretorio carregado com sucesso.");
+        // Identifica a hash do diretório,
+        int i = diretorio.hash(id);
+        System.out.println("Encontrado o i: " + i);
+        // Recupera o cesto
+        long enderecoCesto = diretorio.endereço(i);
+        System.out.println("Endereco do cesto: " + enderecoCesto);
+        Cesto c = new Cesto(quantidadeDadosPorCesto);
+        byte[] ba = new byte[c.size()];
+        arqCestos.seek(enderecoCesto);
+        arqCestos.read(ba);
+        c.fromByteArray(ba);
+        boolean status = c.atualizarEnd(id, newOffset);
+        arqCestos.seek(enderecoCesto);
+        arqCestos.write(c.toByteArray());
+        return status;
+    }
     public void print() {
         try {
             byte[] bd = new byte[(int) arqDiretorio.length()];
@@ -469,8 +505,9 @@ public class HashExtensivel {
             arqCestos.seek(0);
             while (arqCestos.getFilePointer() != arqCestos.length()) {
                 System.out.println("Endereço: " + arqCestos.getFilePointer());
-                Cesto c = new Cesto(quantidadeDadosPorCesto);
+                Cesto c = new Cesto(diretorio.cestos_quantidade);
                 byte[] ba = new byte[c.size()];
+                System.out.println("Vou ler: " + c.size() + " bytes");
                 arqCestos.read(ba);
                 c.fromByteArray(ba);
                 System.out.println(c + "\n");
