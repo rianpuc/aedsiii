@@ -3,8 +3,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import javax.swing.JOptionPane;
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,7 +14,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 
 import com.aedsiii.puc.model.Job;
-import com.aedsiii.puc.model.RegistroHashExtensivel;
 
 public class SecondaryToPrimary {
     

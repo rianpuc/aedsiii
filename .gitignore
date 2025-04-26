@@ -4,3 +4,4 @@
 .mvn/
 *.tmp
 *.temp
+*.dat

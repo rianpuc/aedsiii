@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
 
+/**
+ * Classe que representa uma Árvore B.
+ */
 public class BTree {
     private int ordem;
     private int max_keys;
@@ -14,12 +17,13 @@ public class BTree {
     public PaginaBTree pagina;
     private RandomAccessFile BTreeFile;
     
-    // Variáveis de auxílio nas funções recursivas
+    // Variáveis auxiliares
     public RegistroBTree auxKey;
     private long auxPagina;
     private boolean cresceu;
     private boolean diminuiu;
     public boolean antecessoraPendente;
+    public long auxRemovalOffset;
 
     /**
      * Cria o arquivo da árvore B.
@@ -48,6 +52,7 @@ public class BTree {
         }
 
         this.antecessoraPendente = false;
+        this.auxRemovalOffset = -1;
         System.out.println("Árvore B criada.");
     }
 
@@ -303,7 +308,7 @@ public class BTree {
      * @return true se for excluído, senão false.
      * @throws IOException
      */
-    public boolean delete(short deleteID) throws IOException {
+    public boolean delete(int deleteID) throws IOException {
         // System.out.println("Indo deletar: " + deleteID);
         BTreeFile.seek(0);
         BTreeFile.readInt(); // ordem
@@ -312,7 +317,7 @@ public class BTree {
         // Váriavel global: checagem de remoção de uma página da árvore
         diminuiu = false;
 
-        boolean excluido = delete(deleteID, offsetRaiz);
+        boolean excluido = delete((short) deleteID, offsetRaiz);
 
         // Eliminação da raiz
         if (excluido && diminuiu) {
@@ -375,6 +380,7 @@ public class BTree {
         if (i < paginaBT.keys.size() && paginaBT.children.get(0) == -1 && deleteID == paginaBT.keys.get(i).id) {
             // Caso a chave esteja em uma folha (endereço do primeiro ponteiro da pagina = -1)
             // System.out.println("Chave encontrada em uma folha");
+            auxRemovalOffset = paginaBT.keys.get(i).offset;
             // Puxa as chaves após a excluída para a esquerda automaticamente
             paginaBT.keys.remove(i);
             paginaBT.children.remove(i+1);
@@ -394,6 +400,7 @@ public class BTree {
         if (i < paginaBT.keys.size() && paginaBT.children.get(0) != -1 && deleteID == paginaBT.keys.get(i).id && antecessoraPendente == false) {
             // Se o endereço do primeiro ponteiro não for -1, então é um nó interno.
             // System.out.println("Chave encontrada em um nó interno.");
+            auxRemovalOffset = paginaBT.keys.get(i).offset;
             // System.out.println("Buscando antecessor...");
             long endPaginaAntecessor = paginaBT.children.get(i);
             PaginaBTree paginaAntecessor = new PaginaBTree(ordem);

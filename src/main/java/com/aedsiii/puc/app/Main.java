@@ -22,6 +22,7 @@ public class Main {
     private static String METHOD = "";
     private static int BTREE_ORDER = -1;
     private static int HASH_CESTOS = -1;
+    private static boolean FILE_CREATION_NEEDED;
 
     public static void printMenu(){
         System.out.printf("\tMetodo atual:\t");
@@ -59,73 +60,66 @@ public class Main {
         HashExtensivel he = null;
         BTree btree = null;
         while(answer != 0){
-            switch (METHOD) {
-                case "btree":
-                    // Verificar se já tem uma árvore B em memória secundária
-                    File btreeAuxFile = new File(BTREE_PATH);
-                    if (btreeAuxFile.exists()) {
-                        RandomAccessFile raf = new RandomAccessFile(btreeAuxFile, "rw");
-                        if (btreeAuxFile.length() > 4) {
-                            BTREE_ORDER = raf.readInt();
-                        }
-                        raf.close();
-                        //System.out.println("BTREE_ORDER: " +  BTREE_ORDER);
-                        btree = new BTree(BTREE_ORDER, BTREE_PATH, false);
-                    } else {
+            if (FILE_CREATION_NEEDED) {
+                switch (METHOD) {
+                    case "btree":
+                        btree = new BTree(BTREE_ORDER, BTREE_PATH, true);
+                        btree.pagina = new PaginaBTree(BTREE_ORDER);
                         registrosBT = KeyDataCreator.criarPares(DB_PATH);
                         if (registrosBT.isEmpty()) {
                             System.out.println("Dataset vazio.");
                             break;
                         }
-                        btree = new BTree(BTREE_ORDER, BTREE_PATH, true);
-                        btree.pagina = new PaginaBTree(BTREE_ORDER);
                         for (RegistroBTree reg : registrosBT) {
                             btree.create(reg);
                         }
-                        System.out.println("Árvore de ordem [" + BTREE_ORDER + "] criada.");
-                    }
-                    break;
-                case "hash":
-                    try {
-                        File d = new File(HE_PATH);
-                        if(d.exists()) { 
-                            File diretorioDB = new File(HE_PATH + "/jobs_diretorio.db");
-                            File cestosDB = new File(HE_PATH + "/jobs_cestos.db");
-                            he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", false);
-                            if(he.cestosSize() != (short)HASH_CESTOS){
-                                he = null;
-                                System.gc();
-                                diretorioDB.delete();
-                                cestosDB.delete();
+                        registrosBT = KeyDataCreator.criarPares(DB_PATH);
+                        FILE_CREATION_NEEDED = false;
+                        break;
+                    case "hash":
+                            try {
+                                File d = new File(HE_PATH);
+                                if(d.exists()) { 
+                                    File diretorioDB = new File(HE_PATH + "/jobs_diretorio.db");
+                                File cestosDB = new File(HE_PATH + "/jobs_cestos.db");
+                                he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", false);
+                                if(he.cestosSize() != (short)HASH_CESTOS){
+                                    he = null;
+                                    System.gc();
+                                    diretorioDB.delete();
+                                    cestosDB.delete();
+                                    ArrayList<RegistroHashExtensivel> registrosHE = KeyDataCreator.criarParesHE(DB_PATH);
+                                    try {
+                                        System.gc();
+                                        he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", true);
+                                        for(RegistroHashExtensivel reg : registrosHE){
+                                            he.create(reg);
+                                        }
+                                    } catch (Exception e){
+                                        System.err.println("Erro ao criar HashExtensivel Linha 424: " + e);
+                                    }
+                                }
+                            }
+                            else {
+                                d.mkdir();
                                 ArrayList<RegistroHashExtensivel> registrosHE = KeyDataCreator.criarParesHE(DB_PATH);
                                 try {
-                                    System.gc();
                                     he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", true);
                                     for(RegistroHashExtensivel reg : registrosHE){
                                         he.create(reg);
                                     }
                                 } catch (Exception e){
-                                    System.err.println("Erro ao criar HashExtensivel Linha 424: " + e);
+                                    System.err.println("Erro ao criar HashExtensivel Linha 436: " + e);
                                 }
                             }
+                        } catch (Exception e) {
+                            System.err.println("Erro ao criar HashExtensivel: " + e);
                         }
-                        else {
-                            d.mkdir();
-                            ArrayList<RegistroHashExtensivel> registrosHE = KeyDataCreator.criarParesHE(DB_PATH);
-                            try {
-                                he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", true);
-                                for(RegistroHashExtensivel reg : registrosHE){
-                                    he.create(reg);
-                                }
-                            } catch (Exception e){
-                                System.err.println("Erro ao criar HashExtensivel Linha 436: " + e);
-                            }
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Erro ao criar HashExtensivel: " + e);
-                    }
-                default:
-                    break;
+                        FILE_CREATION_NEEDED = false;
+                        break;
+                    default:
+                        break;
+                }
             }
             printMenu();
             answer = Integer.parseInt(sc.nextLine());
@@ -224,6 +218,9 @@ public class Main {
                             } else {
                                 System.out.println("Vaga não encontrada. ID: " + id);
                             }
+                            break;
+                        case "btree":
+                            break;
                         default:
                             break;
                     }
@@ -251,16 +248,33 @@ public class Main {
                                 if(registroHE != null) {
                                     res = SecondaryToPrimary.removeJobRAF(id, DB_PATH, registroHE.offset);
                                     boolean s = he.delete(id);
-                                    if(s) System.out.println("Removido do hash com sucesso!");
+                                    if(s) System.out.println("Removido do Hash com sucesso!");
                                 } else {
-                                    System.out.println("Registro nao encontrado.");
+                                    System.out.println("Registro não encontrado.");
                                 }
                             } catch (Exception e) {
                                 System.err.println("Erro removerJobRAF: " + e);
                             }
+                            break;
+                        case "btree":
+                            btree.delete(id);
+                            res = SecondaryToPrimary.removeJobRAF(id, DB_PATH, btree.auxRemovalOffset);
+                            if (res) {
+                                System.out.println("Removido da Árvore B com sucesso!");
+                            } else {
+                                System.out.println("Registro não encontrado.");
+                            }
+                            if (btree.antecessoraPendente) {
+                                // System.out.println("Indo deletar antecessora pendente: " + btree.auxKey.id);
+                                btree.delete(btree.auxKey.id);
+                                btree.antecessoraPendente = false;
+                            }
+                            btree.auxRemovalOffset = -1;
+                            break;
                         default:
                             break;
                     }
+                    break;
                 case 5: // mostrar todos os jobs
                     switch (METHOD) {
                         case "sequencial":
@@ -305,24 +319,6 @@ public class Main {
                         continue;
                     }
                     ExternalSort.sort(b_registros, m_caminhos, DB_PATH, EXTERNAL_SORT_PATH);
-
-                    // Teste leitura da distribuição inicial
-                    //ExternalSort.test_read(EXTERNAL_SORT_PATH, m_caminhos);
-                case 10:
-                    short deleteID;
-                    System.out.println("escolhe id");
-                    deleteID = Short.parseShort(sc.nextLine());
-                    boolean deleteCheck = btree.delete(deleteID);
-                    if (deleteCheck) {
-                        System.out.println("Registro com ID " + deleteID + " removido!");
-                    } else {
-                        System.out.println("Registro não encontrado.");
-                    }
-                    if (btree.antecessoraPendente) {
-                        // System.out.println("Indo deletar antecessora pendente: " + btree.auxKey.id);
-                        btree.delete(btree.auxKey.id);
-                        btree.antecessoraPendente = false;
-                    }
                     break;
                 case 14:
                     changeIndexMethod(sc, false);
@@ -331,6 +327,7 @@ public class Main {
                     break;
                 default:
                     System.out.println("Opção inválida. Tente novamente.");
+                    break;
             }
         }
         sc.close();
@@ -338,6 +335,7 @@ public class Main {
     public static void changeIndexMethod(Scanner sc, boolean load) {
         Properties config = new Properties();
         File configFile = new File(CONFIG_FILE);
+        FILE_CREATION_NEEDED = true;
         try {
             if (configFile.exists()) {
                 try (FileInputStream fis = new FileInputStream(configFile)) {
@@ -345,17 +343,10 @@ public class Main {
                 }
             }
             String dbPath = config.getProperty("binary.path");
-            // String smallDbPath = config.getProperty("small_binary.path");
-            if (dbPath == null || dbPath.isEmpty() /*|| smallDbPath == null || smallDbPath.isEmpty()*/) {
-                // PRIMEIRA ESCOLHA É O DB ORIGINAL
+            if (dbPath == null || dbPath.isEmpty()) {
                 ArrayList<Job> jobs = FileParser.parseFile();
                 PrimaryToSecondary.toSecondary(jobs, DB_PATH);
                 config.setProperty("binary.path", DB_PATH);
-
-                // SEGUNDA ESCOLHA É O DB MENOR DE TESTES
-                // ArrayList<Job> smallerJobs = FileParser.parseFile();
-                // PrimaryToSecondary.toSecondary(smallerJobs, "smaller_binary_db.db");
-                // config.setProperty("small_binary.path", "smaller_binary_db.db");
 
                 try (FileOutputStream fos = new FileOutputStream(configFile)) {
                     config.store(fos,  "Guardando o local do binario");
@@ -363,13 +354,25 @@ public class Main {
             }
             String indexMethod = config.getProperty("index.method");
             if (!load || indexMethod == null) {
-                int select;
+                int select = -1;
+                boolean validInput = false;
                 System.out.println("Selecione o metodo de armazenamento: \n" + 
                                     "1. Sequencial\n" +
                                     "2. B-Tree\n" +
                                     "3. Hash Extensivel\n" +
                                     "4. Lista invertida\n");
-                select = Integer.parseInt(sc.nextLine());
+                while (!validInput) {
+                    try {
+                        select = Integer.parseInt(sc.nextLine());
+                        if (select > 0 && select <= 4) {
+                            validInput = true;
+                        } else {
+                            System.out.println("Por favor selecione uma opção válida.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Insira um número.");
+                    }
+                }
                 switch(select){
                     case 1:
                         config.setProperty("index.method", "sequencial");
@@ -397,7 +400,7 @@ public class Main {
                         config.remove("hash.cestos");
                         break;
                     default:
-                        System.out.println("Por favor selecione uma opcao valida.");
+                        System.out.println("Por favor selecione uma opção válida.");
                         return;
                 }
                 try (FileOutputStream fos = new FileOutputStream(configFile)) {
@@ -426,74 +429,6 @@ public class Main {
             }
         } catch (IOException e){
             e.printStackTrace();
-        }
-    }
-    public static void loadNewMethod(BTree btree, HashExtensivel he, ArrayList<RegistroBTree> registrosBT, RegistroBTree registroBTree, RegistroHashExtensivel registroHE) throws IOException{
-        switch (METHOD) {
-            case "btree":
-                // Verificar se já tem uma árvore B em memória secundária
-                File btreeAuxFile = new File(BTREE_PATH);
-                if (btreeAuxFile.exists()) {
-                    RandomAccessFile raf = new RandomAccessFile(btreeAuxFile, "rw");
-                    if (btreeAuxFile.length() > 4) {
-                        BTREE_ORDER = raf.readInt();
-                    }
-                    raf.close();
-                    //System.out.println("BTREE_ORDER: " +  BTREE_ORDER);
-                    btree = new BTree(BTREE_ORDER, BTREE_PATH, false);
-                } else {
-                    registrosBT = KeyDataCreator.criarPares(DB_PATH);
-                    if (registrosBT.isEmpty()) {
-                        System.out.println("Dataset vazio.");
-                        break;
-                    }
-                    btree = new BTree(BTREE_ORDER, BTREE_PATH, true);
-                    btree.pagina = new PaginaBTree(BTREE_ORDER);
-                    for (RegistroBTree reg : registrosBT) {
-                        btree.create(reg);
-                    }
-                    System.out.println("Árvore de ordem [" + BTREE_ORDER + "] criada.");
-                }
-                break;
-            case "hash":
-                try {
-                    File d = new File(HE_PATH);
-                    if(d.exists()) { 
-                        File diretorioDB = new File(HE_PATH + "/jobs_diretorio.db");
-                        File cestosDB = new File(HE_PATH + "/jobs_cestos.db");
-                        he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", false);
-                        if(he.cestosSize() != (short)HASH_CESTOS){
-                            diretorioDB.delete();
-                            cestosDB.delete();
-                            ArrayList<RegistroHashExtensivel> registrosHE = KeyDataCreator.criarParesHE(DB_PATH);
-                            try {
-                                System.gc();
-                                he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", true);
-                                for(RegistroHashExtensivel reg : registrosHE){
-                                    he.create(reg);
-                                }
-                            } catch (Exception e){
-                                System.err.println("Erro ao criar HashExtensivel Linha 424: " + e);
-                            }
-                        }
-                    }
-                    else {
-                        d.mkdir();
-                        ArrayList<RegistroHashExtensivel> registrosHE = KeyDataCreator.criarParesHE(DB_PATH);
-                        try {
-                            he = new HashExtensivel(HASH_CESTOS, HE_PATH + "/jobs_diretorio.db", HE_PATH + "/jobs_cestos.db", true);
-                            for(RegistroHashExtensivel reg : registrosHE){
-                                he.create(reg);
-                            }
-                        } catch (Exception e){
-                            System.err.println("Erro ao criar HashExtensivel Linha 436: " + e);
-                        }
-                    }
-                } catch (Exception e) {
-                    System.err.println("Erro ao criar HashExtensivel: " + e);
-                }
-            default:
-                break;
         }
     }
 }
