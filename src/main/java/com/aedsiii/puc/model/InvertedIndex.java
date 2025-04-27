@@ -75,10 +75,13 @@ public class InvertedIndex {
 
             List<Integer> ids = index.get(word);
             if (ids != null) {
-                ids.remove(recordId);
-            }
-            if (ids.isEmpty()) {
-                index.remove(word);
+                int removalIndex = ids.indexOf(recordId);
+                if (removalIndex != -1) {
+                    ids.remove(removalIndex);
+                }
+                if (ids.isEmpty()) {
+                    index.remove(word);
+                }
             }
 
         }

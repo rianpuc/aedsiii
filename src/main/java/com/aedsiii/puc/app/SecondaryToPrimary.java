@@ -20,6 +20,7 @@ public class SecondaryToPrimary {
     
     // Variável auxiliar
     public static Job auxJob;
+    public static Job oldJob;
 
     public static int addJob(Job job, String path){
         int last_id = -1;
@@ -168,6 +169,9 @@ public class SecondaryToPrimary {
                     found = true;
                     foundId = jobId;
                     job.setJob_id(jobId);
+
+                    oldJob = job;
+
                     updatedJob = JobDataCollector.updateJobData(sc, job);
                     int newRecordSize = updatedJob.getByteSize(); // tamanho do registro atualizado
 
@@ -245,6 +249,8 @@ public class SecondaryToPrimary {
                 job = deserializeJob(data);
                 job.setJob_id(jobId);
 
+                oldJob = job;
+
                 System.out.println("Job encontrado: " + job.getJob_id());
                 updatedJob = JobDataCollector.updateJobData(sc, job);
                 updatedJob.setJob_id(jobId);
@@ -306,6 +312,9 @@ public class SecondaryToPrimary {
                     foundPos = pos;
                     foundId = jobId;
                     job.setJob_id(jobId);
+
+                    oldJob = job;
+
                     updatedJob = JobDataCollector.updateJobData(sc, job);
                     int newRecordSize = updatedJob.getByteSize(); // tamanho do registro atualizado
                     if(newRecordSize <= originalRecordSize){
