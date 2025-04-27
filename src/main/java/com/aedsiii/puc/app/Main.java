@@ -288,13 +288,43 @@ public class Main {
 
                     String[] termsToUpdate = new String[2];
                     Job aux_ii_updatedJob = SecondaryToPrimary.auxJob;
+                    Job aux_ii_updatedOldJob = SecondaryToPrimary.oldJob;
 
-                    if (aux_ii_updatedJob.getJob_id() != -1) {
+                    if (aux_ii_updatedJob != null && aux_ii_updatedJob.getJob_id() != -1) {
                         termsToUpdate[0] = aux_ii_updatedJob.getJob_title();
                         termsToUpdate[1] = aux_ii_updatedJob.getRole();
+
+                        // Termos antes da edição
+                        String[] oldTerms = new String[2];
+                        oldTerms[0] = aux_ii_updatedOldJob.getJob_title();
+                        oldTerms[1] = aux_ii_updatedOldJob.getRole();
+
+                        // Termos após a edição
+                        Set<String> updatedTermsSet = new HashSet<>();
+                        for (String term : termsToUpdate) {
+                            if (term != null) {
+                                updatedTermsSet.addAll(Arrays.asList(term.toLowerCase().split("\\s+")));
+                            }
+                        }
+
+                        // deletando da lista invertida se um termo antes da edição não estiver no Job atualizado
+                        for (String oldTerm : oldTerms) {
+                            if (oldTerm != null) {
+                                String[] oldWords = oldTerm.toLowerCase().split("\\s+");
+                                for (String word : oldWords) {
+                                    if (!updatedTermsSet.contains(word)) {
+                                        // Remove the term from the inverted index
+                                        invertedIndex_JT.delete(word, aux_ii_updatedJob.getJob_id());
+                                        invertedIndex_JR.delete(word, aux_ii_updatedJob.getJob_id());
+                                    }
+                                }
+                            }
+                        }
+
+                        // adicionando termos na lista invertida
                         for (String string : termsToUpdate) {
-                            invertedIndex_JT.delete(string, aux_ii_updatedJob.getJob_id());
-                            invertedIndex_JR.delete(string, aux_ii_updatedJob.getJob_id());
+                            invertedIndex_JT.add(string, aux_ii_updatedJob.getJob_id());
+                            invertedIndex_JR.add(string, aux_ii_updatedJob.getJob_id());
                         }
                         System.out.println("Lista invertida atualizada após atualização de um registro.");
                     }
@@ -361,7 +391,7 @@ public class Main {
                         default:
                             break;
                     }
-                    if (aux_ii_deletedJob.getJob_id() != -1) {
+                    if (aux_ii_deletedJob != null && aux_ii_deletedJob.getJob_id() != -1) {
                         termsRemoval[0] = aux_ii_deletedJob.getJob_title();
                         termsRemoval[1] = aux_ii_deletedJob.getRole();
                         for (String string : termsRemoval) {
