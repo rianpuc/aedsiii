@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
 
+/* Código de referência usado: https://github.com/kutova/AEDsIII/blob/main/ArvoreBMais/aed3/ArvoreBMais.java */
+/* Alterações foram feitas para que seja uma Árvore B ao invés de uma Árvore B+ */
+
 /**
  * Classe que representa uma Árvore B.
  */
