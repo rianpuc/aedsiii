@@ -5,6 +5,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import com.aedsiii.puc.model.InvertedIndex;
@@ -12,6 +15,7 @@ import com.aedsiii.puc.model.Job;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
 import com.aedsiii.puc.model.RegistroHashExtensivel;
+import com.aedsiii.puc.model.Huffman;
 
 public class Main {
     private static final String DB_PATH = "binary_db.db";
@@ -509,6 +513,14 @@ public class Main {
                     break;
                 case 8:
                     changeIndexMethod(sc, false);
+                    break;
+                case 9:
+                    Path caminho = Paths.get(DB_PATH);
+                    byte[] db_bytes = Files.readAllBytes(caminho);
+                    Huffman.encode(db_bytes);
+                    break;
+                case 10:
+                    Huffman.decoding("arquivo_huffman.db");
                     break;
                 case 21:
                     invertedIndex_JT.printIndex();

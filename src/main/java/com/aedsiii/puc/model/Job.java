@@ -1,5 +1,7 @@
 package com.aedsiii.puc.model;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -282,7 +284,59 @@ public class Job {
             responsibilities != null ? String.join(", ", responsibilities) : "N/A"
         );
     }
+    public byte[] toByteArray(int alive) {
+        // ByteArrayOutputStream é um stream que escreve dados em um array de bytes na memória.
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        // Usamos o DataOutputStream para ter acesso aos métodos convenientes (writeInt, writeUTF, etc.)
+        // que escreverão no nosso ByteArrayOutputStream.
+        try (DataOutputStream dos = new DataOutputStream(baos)) {
+            if (alive == 1) {
+                dos.writeByte(1); // Lápide (1 = vivo)
+            } else {
+                dos.writeByte(0);
+            }
+            dos.writeShort(this.job_id);
+            dos.writeUTF(this.experience);
+            dos.writeUTF(this.qualification);
+            dos.writeUTF(this.salary_range);
+            dos.writeUTF(this.location);
+            dos.writeUTF(this.country);
+            dos.writeFloat(this.latitude);
+            dos.writeFloat(this.longitude);
+            dos.writeUTF(this.work_type);
+            dos.writeInt(this.company_size);
+            dos.writeLong(this.job_posting_date.getEpochSecond());
 
+            dos.writeByte(6);
+            String preference = this.preference;
+            while(preference.length() < 6) preference += " ";
+            dos.write(preference.substring(0, 6).getBytes("UTF-8")); // STRING FIXA DE TAMANHO 6 (especificando charset é uma boa prática)
+            
+            dos.writeUTF(this.contact_person);
+            dos.writeUTF(this.contact);
+            dos.writeUTF(this.job_title);
+            dos.writeUTF(this.role);
+            dos.writeUTF(this.job_portal);
+            dos.writeUTF(this.job_description);
+
+            // Seus métodos auxiliares devem funcionar sem alteração,
+            // pois eles ainda recebem um DataOutputStream.
+            writeListBinary(dos, this.benefits);
+            writeListBinary(dos, this.skills);
+            writeListBinary(dos, this.responsibilities);
+            
+            dos.writeUTF(this.company);
+            dos.writeUTF(this.company_profile);
+
+        } catch (IOException e) {
+            // Em vez de apenas imprimir, é melhor lançar uma exceção para que o chamador saiba que a serialização falhou.
+            // RuntimeException não exige que o método que chama faça um try-catch obrigatório.
+            throw new RuntimeException("Erro ao converter Job para byte[]. ID = " + this.job_id, e);
+        }
+
+        // Retorna o array de bytes acumulado pelo ByteArrayOutputStream
+        return baos.toByteArray();
+    }
     /**
      * Função para escrever o objeto no arquivo
      * @param dos DataOutputStream do arquivo de destino

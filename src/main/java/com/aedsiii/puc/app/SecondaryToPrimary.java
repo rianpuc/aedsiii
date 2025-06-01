@@ -385,7 +385,7 @@ public class SecondaryToPrimary {
                 job = deserializeJob(data); // deserialize = transformar array de bytes em objeto
                 job.setJob_id(jobId);
                 if (alive == 1) { // adicionar na lista só se o registro tiver vivo
-                jobs.add(job);
+                    jobs.add(job);
                 }
             }
             arq.close();
