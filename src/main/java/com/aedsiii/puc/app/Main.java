@@ -12,6 +12,7 @@ import java.util.*;
 
 import com.aedsiii.puc.model.InvertedIndex;
 import com.aedsiii.puc.model.Job;
+import com.aedsiii.puc.model.KMP;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
 import com.aedsiii.puc.model.RegistroHashExtensivel;
@@ -52,8 +53,8 @@ public class Main {
                           "\t5.  Mostrar todos\n" +
                           "\t6.  Pesquisar nas listas invertidas\n" +
                           "\t7.  Reordenar banco de dados\n" +
-                          "\t8. Trocar método de armazenamento\n" +
-                          "\t21. Mostar lista invertida (DEBUG)\n" +
+                          "\t8.  Trocar método de armazenamento\n" +
+                          "\t21. Mostrar lista invertida (DEBUG)\n" +
                           "\t0.  Sair\n");
     }
     public static void main(String[] args) throws Exception{
@@ -521,6 +522,42 @@ public class Main {
                     break;
                 case 10:
                     Huffman.decoding("arquivo_huffman.db");
+                    break;
+                case 30:
+                    System.out.println("Digite o padrão a ser pesquisado em job_description:");
+                    String padrao = sc.nextLine();
+                    try {
+                        padrao = sc.nextLine();
+                        if (padrao == null || padrao.trim().isEmpty()) {
+                            System.out.println("Padrão inválido. Tente novamente.");
+                            break;
+                        }
+                        ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+                        ArrayList<Job> found_KMP_jobs = new ArrayList<>();
+                        int foundCount = 0;
+                        int previousCount = foundCount;
+                        for (Job job_5 : jobs) {
+                            try {
+                                foundCount += KMP.search(padrao, job_5.getJob_description());
+                                if (foundCount > previousCount) {
+                                    found_KMP_jobs.add(job_5);
+                                }
+                                previousCount = foundCount;
+                            } catch (Exception e) {
+                                System.out.println("Erro ao buscar no job ID " + job_5.getJob_id() + ": " + e.getMessage());
+                            }
+                        }
+                            if (!found_KMP_jobs.isEmpty()) {
+                                for (Job job_5 : found_KMP_jobs) {
+                                    System.out.println(job_5);
+                                }
+                                System.out.println("Padrão \"" + padrao + "\" encontrado " + foundCount + " vezes em " + found_KMP_jobs.size() + " registros.");
+                            } else {
+                                System.out.println("Padrão não encontrado em nenhum registro.");
+                            }
+                    } catch (Exception e) {
+                        System.out.println("Erro ao ler o padrão ou executar a busca: " + e.getMessage());
+                    }
                     break;
                 case 21:
                     invertedIndex_JT.printIndex();
