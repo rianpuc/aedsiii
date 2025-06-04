@@ -54,7 +54,9 @@ public class Main {
                           "\t6.  Pesquisar nas listas invertidas\n" +
                           "\t7.  Reordenar banco de dados\n" +
                           "\t8.  Trocar método de armazenamento\n" +
+                          "----------------TESTES----------------\n" +
                           "\t21. Mostrar lista invertida (DEBUG)\n" +
+                          "\t30. Pesquisar padrão usando KMP\n" +
                           "\t0.  Sair\n");
     }
     public static void main(String[] args) throws Exception{
@@ -525,7 +527,7 @@ public class Main {
                     Huffman.decoding("arquivo_huffman.db");
                     break;
                 case 30:
-                    System.out.println("Digite o padrão a ser pesquisado em job_description:");
+                    System.out.println("Digite o padrão a ser pesquisado em job_description (case-sensitive):");
                     String padrao;
                     try {
                         padrao = sc.nextLine();
