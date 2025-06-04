@@ -413,6 +413,7 @@ public class Main {
                             for (Job job_5 : jobs) {
                                 System.out.println(job_5);
                             }
+                            jobs = null;
                             break;
                         case "btree":
                             if (btree != null) {
@@ -525,7 +526,7 @@ public class Main {
                     break;
                 case 30:
                     System.out.println("Digite o padrão a ser pesquisado em job_description:");
-                    String padrao = sc.nextLine();
+                    String padrao;
                     try {
                         padrao = sc.nextLine();
                         if (padrao == null || padrao.trim().isEmpty()) {
@@ -547,11 +548,13 @@ public class Main {
                                 System.out.println("Erro ao buscar no job ID " + job_5.getJob_id() + ": " + e.getMessage());
                             }
                         }
+                        jobs = null;
                             if (!found_KMP_jobs.isEmpty()) {
                                 for (Job job_5 : found_KMP_jobs) {
                                     System.out.println(job_5);
                                 }
                                 System.out.println("Padrão \"" + padrao + "\" encontrado " + foundCount + " vezes em " + found_KMP_jobs.size() + " registros.");
+                                found_KMP_jobs = null;
                             } else {
                                 System.out.println("Padrão não encontrado em nenhum registro.");
                             }
