@@ -1,5 +1,6 @@
 package com.aedsiii.puc.model;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
@@ -27,16 +28,16 @@ class HuffmanNode implements Comparable<HuffmanNode> {
 }
 
 public class Huffman {
-    public static void encode(byte[] bytes) throws IOException {
+    public static void encode(byte[] bytes, int index) throws IOException {
         HashMap<Byte, Integer> charFreq = getCharFrequency(bytes);
-        System.out.println(charFreq);
+        //System.out.println(charFreq);
         PriorityQueue<HuffmanNode> pq = buildPriorityQueue(charFreq);
         HuffmanNode raiz = buildHuffmanTree(pq);
         HashMap<Byte, String> codigos = new HashMap<>();
         constroiCodigos(raiz, "", codigos);
-        System.out.println(codigos);
+        //System.out.println(codigos);
         String sequencia = codificar(codigos, bytes);
-        DataOutputStream dos = new DataOutputStream(new FileOutputStream("arquivo_huffman.db"));
+        DataOutputStream dos = new DataOutputStream(new FileOutputStream("snapshots/binary_dbHuffmanCompressao" + index + ".db"));
         dos.writeInt(charFreq.size());
         for(Map.Entry<Byte, Integer> entry : charFreq.entrySet()){
             dos.writeByte(entry.getKey());
@@ -46,9 +47,8 @@ public class Huffman {
         writeEncoded(dos, sequencia);
         dos.close();
     }
-    public static void decoding(String path) throws IOException{
-        DataInputStream dis = new DataInputStream(new FileInputStream(path));
-        DataOutputStream dos = new DataOutputStream(new FileOutputStream("decompressed_huffman.db"));
+    public static byte[] decode(int version) throws IOException{
+        DataInputStream dis = new DataInputStream(new FileInputStream("snapshots/binary_dbHuffmanCompressao" + version + ".db"));
         HashMap<Byte, Integer> mapaRecuperado = new HashMap<>();
         int tamanhoMapa = dis.readInt();
         for(int i = 0; i < tamanhoMapa; i++){
@@ -60,6 +60,7 @@ public class Huffman {
         long totalBits = dis.readLong();
         LeitorDeBits leitorDeBits = new LeitorDeBits(dis);
         HuffmanNode noAtual = arvore;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for(int i = 0; i < totalBits; i++){
             noAtual = arvore;
             while(noAtual.esquerdo != null && noAtual.direito != null){
@@ -70,9 +71,10 @@ public class Huffman {
                     noAtual = noAtual.direito;
                 }
             }
-            dos.writeByte(noAtual.b);
+            baos.write(noAtual.b);
         }
-        dos.close();
+        dis.close();
+        return baos.toByteArray();
     }
     public static void constroiCodigos(HuffmanNode no, String codigo, HashMap<Byte, String> codigos){
         if (no == null){

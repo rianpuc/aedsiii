@@ -9,10 +9,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.aedsiii.puc.model.InvertedIndex;
 import com.aedsiii.puc.model.Job;
 import com.aedsiii.puc.model.KMP;
+import com.aedsiii.puc.model.LZW;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
 import com.aedsiii.puc.model.RegistroHashExtensivel;
@@ -519,12 +522,44 @@ public class Main {
                     changeIndexMethod(sc, false);
                     break;
                 case 9:
-                    Path caminho = Paths.get(DB_PATH);
-                    byte[] db_bytes = Files.readAllBytes(caminho);
-                    Huffman.encode(db_bytes);
+                    Compression.compress(DB_PATH);
                     break;
                 case 10:
-                    Huffman.decoding("arquivo_huffman.db");
+                    File snapshotDir = new File("snapshots/");
+                    File[] arquivos = snapshotDir.listFiles();
+                    if (arquivos == null || arquivos.length == 0) {
+                        System.out.println("Nenhuma versão de snapshot foi encontrada.");
+                        break;
+                    }
+                    Pattern pattern = Pattern.compile("binary_dbHuffmanCompressao(\\d+)\\.db");
+                    List<Integer> versoesDisponiveis = new ArrayList<>();
+                    for (File f : arquivos) {
+                        Matcher matcher = pattern.matcher(f.getName());
+                        if (matcher.matches()) {
+                            int versao = Integer.parseInt(matcher.group(1));
+                            versoesDisponiveis.add(versao);
+                        }
+                    }
+                    if (versoesDisponiveis.isEmpty()) {
+                        System.out.println("Nenhuma versão de snapshot encontrada.");
+                        break;
+                    }
+                    // Ordenar e exibir opções ao usuário
+                    Collections.sort(versoesDisponiveis);
+                    System.out.println("Versões disponíveis para descompressão:");
+                    for (int v : versoesDisponiveis) {
+                        System.out.println("Versão " + v);
+                    }
+                    // Solicitar input do usuário
+                    System.out.print("Digite a versão que deseja descomprimir: ");
+                    int escolhida = sc.nextInt();
+
+                    if (!versoesDisponiveis.contains(escolhida)) {
+                        System.out.println("Versão inválida. Operação cancelada.");
+                        break;
+                    }
+                    Compression.decompress(escolhida);
+                    sc.nextLine();
                     break;
                 case 30:
                     System.out.println("Digite o padrão a ser pesquisado em job_description (case-sensitive):");
