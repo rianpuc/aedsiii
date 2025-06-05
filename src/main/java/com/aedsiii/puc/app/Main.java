@@ -1,25 +1,18 @@
 package com.aedsiii.puc.app;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import com.aedsiii.puc.model.InvertedIndex;
 import com.aedsiii.puc.model.Job;
 import com.aedsiii.puc.model.KMP;
-import com.aedsiii.puc.model.LZW;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
 import com.aedsiii.puc.model.RegistroHashExtensivel;
-import com.aedsiii.puc.model.Huffman;
 
 public class Main {
     private static final String DB_PATH = "binary_db.db";
