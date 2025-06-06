@@ -28,7 +28,6 @@ public class KMP {
             }
             // Se j == m, então todos os símbolos do padrão foram encontrados em sequência no texto
             if (j == m) {
-                System.out.print("\rPadrão encontrado. Index: " + (i-j) + "          ");
                 foundCount++;
                 // Voltar uma posição para verificar se o caracter no fim do padrão pode ser o início de outro
                 j = transicoesDeFalha[j-1];
