@@ -41,8 +41,6 @@ public class Main {
             case "hash":
                 System.out.printf("Hash Extensivel\t Cestos: %d\n", HASH_CESTOS);
                 break;
-            case "lista":
-                break;
         }
         System.out.printf("\t1.  Inserir\n" +
                           "\t2.  Get\n" +
@@ -52,6 +50,8 @@ public class Main {
                           "\t6.  Pesquisar nas listas invertidas\n" +
                           "\t7.  Reordenar banco de dados\n" +
                           "\t8.  Trocar método de armazenamento\n" +
+                          "\t9.  Compressão\n" +
+                          "\t10. Descompressão\n" +
                           "----------------TESTES----------------\n" +
                           "\t21. Mostrar lista invertida (DEBUG)\n" +
                           "\t30. Pesquisar padrão usando KMP\n" +
@@ -81,9 +81,9 @@ public class Main {
         if (invertedIndex_JT_File.exists() && invertedIndex_JR_File.exists()) {
             invertedIndex_JT.loadFromFile(INVERTED_INDEX_JOBTITLE_PATH);
             invertedIndex_JR.loadFromFile(INVERTED_INDEX_JOBROLE_PATH);
-            System.out.println("Listas invertidas carregadas.");
+            //System.out.println("Listas invertidas carregadas.");
         } else {
-            System.out.println("Criando listas invertidas...");
+            //System.out.println("Criando listas invertidas...");
             ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
             for (Job job_ii: jobs) {
                 invertedIndex_JT.add(job_ii.getJob_title(), job_ii.getJob_id());
@@ -544,7 +544,7 @@ public class Main {
                     Collections.sort(versoesDisponiveis);
                     System.out.println("Versões disponíveis para descompressão:");
                     for (int v : versoesDisponiveis) {
-                        System.out.println("Versão " + v);
+                        System.out.println( v +")" + " Versão " + v);
                     }
                     // Solicitar input do usuário
                     System.out.print("Digite a versão que deseja descomprimir: ");

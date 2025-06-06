@@ -39,7 +39,7 @@ public class BTree {
      * @throws IOException
      */
     public BTree(int ordem, String BTreeFilePath, boolean makeNewTree) throws IOException {
-        System.out.println("Criando Árvore B de ordem: " + ordem);
+        //System.out.println("Criando Árvore B de ordem: " + ordem);
         this.ordem = ordem;
         this.max_children = this.ordem;
         this.max_keys = this.ordem - 1;
@@ -60,7 +60,7 @@ public class BTree {
         this.antecessoraPendente = false;
         this.auxRemovalOffset = -1;
         this.auxUpdateOffset = -1;
-        System.out.println("Árvore B criada.");
+        //System.out.println("Árvore B criada.");
     }
 
     /**
