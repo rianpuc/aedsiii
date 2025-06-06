@@ -1,5 +1,4 @@
 package com.aedsiii.puc.app;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,11 +7,21 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import com.aedsiii.puc.model.Huffman;
 import com.aedsiii.puc.model.LZW;
 
+/**
+ * Classe abstrata, responsavel por compactar o arquivo binario do banco de dados.
+ * @Author rianpuc
+ * @version 1.0
+ */
+
 public abstract class Compression {
+    /**
+     * Funcao que pega o proximo valor de index de arquivo comprimido.
+     * @param snapshotDir - O diretorio onde se encontra os arquivos comprimidos.
+     * @return int - O numero sucessor ao ultimo arquivo comprimido.
+     */
     public static int getNextSnapshotIndex(String snapshotDir) {
         File dir = new File(snapshotDir);
         if (!dir.exists()) dir.mkdirs();
@@ -28,7 +37,12 @@ public abstract class Compression {
         }
         return max + 1;
     }
-    public static void compress(String path) throws IOException{
+    /**
+     * Funcao que comprime o arquivo principal, utilizando Huffman e LZW.
+     * @param path - O caminho onde se encontra o banco de dados original para compressao.
+     * @throws IOException - Pode ocorrer erros de IO por conta da leitura/escrita de arquivos.
+     */
+    public static void compress(String path) throws IOException {
         Path caminho = Paths.get(path);
         byte[] db_bytes = Files.readAllBytes(caminho);
         int nextIndex = getNextSnapshotIndex("snapshots");
@@ -77,7 +91,14 @@ public abstract class Compression {
         }
         System.out.println("\n");
     }
+    /**
+     * Funcao que descomprime tanto o arquivo Huffman quanto o LZW e compara seu desempenho, substituindo 
+     * o arquivo descomprimido pelo arquivo original de dados logo apos.
+     * @param version - O indice do arquivo que o usuario quer descomprimir (deve existir no diretorio)
+     * @throws IOException - Pode ocorrer erros de IO por conta da leitura/escrita de arquivos.
+     */
     public static void decompress(int version) throws IOException{
+        // Inicializacao de variaveis auxiliares.
         byte[] huffDecoded, lzwDecoded;
         long start, end;
         double huffTime, lzwTime;
@@ -94,7 +115,7 @@ public abstract class Compression {
         end = System.nanoTime();
         lzwTime = (end - start) / 1_000_000.0;
 
-        // Cria arquivos temporários dos descomprimidos
+        // Cria arquivos temporários dos descomprimidos para fazer a substituicao
         Path huffDecodedPath = Paths.get("decompressedHuffman" + version + ".db");
         Files.write(huffDecodedPath, huffDecoded);
 
@@ -119,6 +140,7 @@ public abstract class Compression {
             Files.copy(huffDecodedPath, finalDbPath, StandardCopyOption.REPLACE_EXISTING);
             System.out.println("\nTempos iguais. Huffman escolhido por padrão.");
         }
+        // Deletando os arquivos temporarios
         Files.deleteIfExists(huffDecodedPath);
         Files.deleteIfExists(lzwDecodedPath);
         System.gc();
