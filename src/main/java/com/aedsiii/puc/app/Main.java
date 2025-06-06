@@ -52,10 +52,7 @@ public class Main {
                           "\t8.  Trocar método de armazenamento\n" +
                           "\t9.  Compressão\n" +
                           "\t10. Descompressão\n" +
-                          "----------------TESTES----------------\n" +
-                          "\t21. Mostrar lista invertida (DEBUG)\n" +
-                          "\t30. Pesquisar padrão usando KMP\n" +
-                          "\t31. Pesquisar padrão usando Boyer Moore\n"+
+                          "\t11. Casamento de Padrão\n" +
                           "\t0.  Sair\n");
     }
     public static void main(String[] args) throws Exception{
@@ -557,106 +554,127 @@ public class Main {
                     Compression.decompress(escolhida);
                     sc.nextLine();
                     break;
-                case 30:
-                    System.out.println("Digite o padrão a ser pesquisado em job_description (case-sensitive):");
-                    String padraoKMP;
+                case 11:
+                    System.out.printf("Deseja utilizar qual algoritmo de casamento de padrões?\n" +
+                                      "1) KMP\n" +
+                                      "2) Booyer-More\n");
                     try {
-                        padraoKMP = sc.nextLine();
-                        if (padraoKMP == null || padraoKMP.trim().isEmpty()) {
-                            System.out.println("Padrão inválido. Tente novamente.");
-                            break;
-                        }
-                        ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
-                        ArrayList<Job> found_KMP_jobs = new ArrayList<>();
-                        int foundCountKMP = 0;
-                        int previousCountKMP = foundCountKMP;
-                        for (Job job_5 : jobs) {
-                            try {
-                                foundCountKMP += KMP.search(padraoKMP, job_5.getJob_description());
-                                if (foundCountKMP > previousCountKMP) {
-                                    found_KMP_jobs.add(job_5);
-                                }
-                                previousCountKMP = foundCountKMP;
-                            } catch (Exception e) {
-                                System.out.println("Erro ao buscar no job ID " + job_5.getJob_id() + ": " + e.getMessage());
+                        int selected = -1;
+                        while(true){
+                            selected = sc.nextInt();
+                            if(selected == 1 || selected == 2){
+                                break;
+                            } else {
+                                System.out.println("Por favor, selecione um valor válido.");
                             }
                         }
-                        jobs = null;
-                        if (!found_KMP_jobs.isEmpty()) {
-                            System.out.println("Padrão \"" + padraoKMP + "\" encontrado " + foundCountKMP + " vezes em " + found_KMP_jobs.size() + " registros.");
-                            String resposta;
-                            while (true) {
-                                System.out.println("Deseja ver os registros de ocorrência? (S/N)");
-                                resposta = sc.nextLine();
-                                if (resposta.toLowerCase().trim().equals("s")) {
-                                    for (Job job_5 : found_KMP_jobs) {
-                                        System.out.println(job_5);
+                        sc.nextLine();
+                        switch (selected) {
+                            case 1:
+                                System.out.println("Digite o padrão a ser pesquisado em job_description (case-sensitive):");
+                                String padraoKMP;
+                                try {
+                                    padraoKMP = sc.nextLine();
+                                    if (padraoKMP == null || padraoKMP.trim().isEmpty()) {
+                                        System.out.println("Padrão inválido. Tente novamente.");
+                                        break;
                                     }
-                                    System.out.println("Padrão \"" + padraoKMP + "\" encontrado " + foundCountKMP + " vezes em " + found_KMP_jobs.size() + " registros.");
-                                    break;
-                                } else if (resposta.toLowerCase().trim().equals("n")) {
-                                    break;
-                                } else {
-                                    System.out.println("Resposta inválida.");
-                                }
-                            }
-                            found_KMP_jobs = null;
-                        } else {
-                            System.out.println("Padrão não encontrado em nenhum registro.");
-                        }
-                    } catch (Exception e) {
-                        System.out.println("Erro ao ler o padrão ou executar a busca: " + e.getMessage());
-                    }
-                    break;
-                case 31:
-                    System.out.println("Digite o padrão a ser pesquisado em job_description (case-sensitive):");
-                    String padraoBM;
-                    try {
-                        padraoBM = sc.nextLine();
-                        if (padraoBM == null || padraoBM.trim().isEmpty()) {
-                            System.out.println("Padrão inválido. Tente novamente.");
-                            break;
-                        }
-                        ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
-                        ArrayList<Job> found_BM_jobs = new ArrayList<>();
-                        int foundCountBM = 0;
-                        int previousCountBM = foundCountBM;
-                        for (Job job_5 : jobs) {
-                            try {
-                                foundCountBM += BoyerMoore.search(padraoBM, job_5.getJob_description());
-                                if (foundCountBM > previousCountBM) {
-                                    found_BM_jobs.add(job_5);
-                                }
-                                previousCountBM = foundCountBM;
-                            } catch (Exception e) {
-                                System.out.println("Erro ao buscar no job ID " + job_5.getJob_id() + ": " + e.getMessage());
-                            }
-                        }
-                        jobs = null;
-                        if (!found_BM_jobs.isEmpty()) {
-                            System.out.println("Padrão \"" + padraoBM + "\" encontrado " + foundCountBM + " vezes em " + found_BM_jobs.size() + " registros.");
-                            String resposta;
-                            while (true) {
-                                System.out.println("Deseja ver os registros de ocorrência? (S/N)");
-                                resposta = sc.nextLine();
-                                if (resposta.toLowerCase().trim().equals("s")) {
-                                    for (Job job_5 : found_BM_jobs) {
-                                        System.out.println(job_5);
+                                    ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+                                    ArrayList<Job> found_KMP_jobs = new ArrayList<>();
+                                    int foundCountKMP = 0;
+                                    int previousCountKMP = foundCountKMP;
+                                    for (Job job_5 : jobs) {
+                                        try {
+                                            foundCountKMP += KMP.search(padraoKMP, job_5.getJob_description());
+                                            if (foundCountKMP > previousCountKMP) {
+                                                found_KMP_jobs.add(job_5);
+                                            }
+                                            previousCountKMP = foundCountKMP;
+                                        } catch (Exception e) {
+                                            System.out.println("Erro ao buscar no job ID " + job_5.getJob_id() + ": " + e.getMessage());
+                                        }
                                     }
-                                    System.out.println("Padrão \"" + padraoBM + "\" encontrado " + foundCountBM + " vezes em " + found_BM_jobs.size() + " registros.");
-                                    break;
-                                } else if (resposta.toLowerCase().trim().equals("n")) {
-                                    break;
-                                } else {
-                                    System.out.println("Resposta inválida.");
+                                    jobs = null;
+                                    if (!found_KMP_jobs.isEmpty()) {
+                                        System.out.println("Padrão \"" + padraoKMP + "\" encontrado " + foundCountKMP + " vezes em " + found_KMP_jobs.size() + " registros.");
+                                        String resposta;
+                                        while (true) {
+                                            System.out.println("Deseja ver os registros de ocorrência? (S/N)");
+                                            resposta = sc.nextLine();
+                                            if (resposta.toLowerCase().trim().equals("s")) {
+                                                for (Job job_5 : found_KMP_jobs) {
+                                                    System.out.println(job_5);
+                                                }
+                                                System.out.println("Padrão \"" + padraoKMP + "\" encontrado " + foundCountKMP + " vezes em " + found_KMP_jobs.size() + " registros.");
+                                                break;
+                                            } else if (resposta.toLowerCase().trim().equals("n")) {
+                                                break;
+                                            } else {
+                                                System.out.println("Resposta inválida.");
+                                            }
+                                        }
+                                        found_KMP_jobs = null;
+                                    } else {
+                                        System.out.println("Padrão não encontrado em nenhum registro.");
+                                    }
+                                } catch (Exception e) {
+                                    System.out.println("Erro ao ler o padrão ou executar a busca: " + e.getMessage());
                                 }
-                            }
-                            found_BM_jobs = null;
-                        } else {
-                            System.out.println("Padrão não encontrado em nenhum registro.");
+                                break;
+                            case 2:
+                                System.out.println("Digite o padrão a ser pesquisado em job_description (case-sensitive):");
+                                String padraoBM;
+                                try {
+                                    padraoBM = sc.nextLine();
+                                    if (padraoBM == null || padraoBM.trim().isEmpty()) {
+                                        System.out.println("Padrão inválido. Tente novamente.");
+                                        break;
+                                    }
+                                    ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+                                    ArrayList<Job> found_BM_jobs = new ArrayList<>();
+                                    int foundCountBM = 0;
+                                    int previousCountBM = foundCountBM;
+                                    for (Job job_5 : jobs) {
+                                        try {
+                                            foundCountBM += BoyerMoore.search(padraoBM, job_5.getJob_description());
+                                            if (foundCountBM > previousCountBM) {
+                                                found_BM_jobs.add(job_5);
+                                            }
+                                            previousCountBM = foundCountBM;
+                                        } catch (Exception e) {
+                                            System.out.println("Erro ao buscar no job ID " + job_5.getJob_id() + ": " + e.getMessage());
+                                        }
+                                    }
+                                    jobs = null;
+                                    if (!found_BM_jobs.isEmpty()) {
+                                        System.out.println("Padrão \"" + padraoBM + "\" encontrado " + foundCountBM + " vezes em " + found_BM_jobs.size() + " registros.");
+                                        String resposta;
+                                        while (true) {
+                                            System.out.println("Deseja ver os registros de ocorrência? (S/N)");
+                                            resposta = sc.nextLine();
+                                            if (resposta.toLowerCase().trim().equals("s")) {
+                                                for (Job job_5 : found_BM_jobs) {
+                                                    System.out.println(job_5);
+                                                }
+                                                System.out.println("Padrão \"" + padraoBM + "\" encontrado " + foundCountBM + " vezes em " + found_BM_jobs.size() + " registros.");
+                                                break;
+                                            } else if (resposta.toLowerCase().trim().equals("n")) {
+                                                break;
+                                            } else {
+                                                System.out.println("Resposta inválida.");
+                                            }
+                                        }
+                                        found_BM_jobs = null;
+                                    } else {
+                                        System.out.println("Padrão não encontrado em nenhum registro.");
+                                    }
+                                } catch (Exception e) {
+                                    System.out.println("Erro ao ler o padrão ou executar a busca: " + e.getMessage());
+                                }
+                                break;
                         }
-                    } catch (Exception e) {
-                        System.out.println("Erro ao ler o padrão ou executar a busca: " + e.getMessage());
+                    } catch (Exception e){
+                        System.err.println("Erro em casamento de padroes: " + e);
                     }
                     break;
                 case 21:
