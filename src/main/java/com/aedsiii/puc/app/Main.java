@@ -1,14 +1,17 @@
 package com.aedsiii.puc.app;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.aedsiii.puc.model.BoyerMoore;
 import com.aedsiii.puc.model.InvertedIndex;
 import com.aedsiii.puc.model.Job;
+import com.aedsiii.puc.model.KMP;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
 import com.aedsiii.puc.model.RegistroHashExtensivel;
@@ -38,8 +41,6 @@ public class Main {
             case "hash":
                 System.out.printf("Hash Extensivel\t Cestos: %d\n", HASH_CESTOS);
                 break;
-            case "lista":
-                break;
         }
         System.out.printf("\t1.  Inserir\n" +
                           "\t2.  Get\n" +
@@ -48,8 +49,10 @@ public class Main {
                           "\t5.  Mostrar todos\n" +
                           "\t6.  Pesquisar nas listas invertidas\n" +
                           "\t7.  Reordenar banco de dados\n" +
-                          "\t8. Trocar método de armazenamento\n" +
-                          "\t21. Mostar lista invertida (DEBUG)\n" +
+                          "\t8.  Trocar método de armazenamento\n" +
+                          "\t9.  Compressão\n" +
+                          "\t10. Descompressão\n" +
+                          "\t11. Casamento de Padrão\n" +
                           "\t0.  Sair\n");
     }
     public static void main(String[] args) throws Exception{
@@ -75,9 +78,9 @@ public class Main {
         if (invertedIndex_JT_File.exists() && invertedIndex_JR_File.exists()) {
             invertedIndex_JT.loadFromFile(INVERTED_INDEX_JOBTITLE_PATH);
             invertedIndex_JR.loadFromFile(INVERTED_INDEX_JOBROLE_PATH);
-            System.out.println("Listas invertidas carregadas.");
+            //System.out.println("Listas invertidas carregadas.");
         } else {
-            System.out.println("Criando listas invertidas...");
+            //System.out.println("Criando listas invertidas...");
             ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
             for (Job job_ii: jobs) {
                 invertedIndex_JT.add(job_ii.getJob_title(), job_ii.getJob_id());
@@ -408,6 +411,7 @@ public class Main {
                             for (Job job_5 : jobs) {
                                 System.out.println(job_5);
                             }
+                            jobs = null;
                             break;
                         case "btree":
                             if (btree != null) {
@@ -509,6 +513,169 @@ public class Main {
                     break;
                 case 8:
                     changeIndexMethod(sc, false);
+                    break;
+                case 9:
+                    Compression.compress(DB_PATH);
+                    break;
+                case 10:
+                    File snapshotDir = new File("snapshots/");
+                    File[] arquivos = snapshotDir.listFiles();
+                    if (arquivos == null || arquivos.length == 0) {
+                        System.out.println("Nenhuma versão de snapshot foi encontrada.");
+                        break;
+                    }
+                    Pattern pattern = Pattern.compile("binary_dbHuffmanCompressao(\\d+)\\.db");
+                    List<Integer> versoesDisponiveis = new ArrayList<>();
+                    for (File f : arquivos) {
+                        Matcher matcher = pattern.matcher(f.getName());
+                        if (matcher.matches()) {
+                            int versao = Integer.parseInt(matcher.group(1));
+                            versoesDisponiveis.add(versao);
+                        }
+                    }
+                    if (versoesDisponiveis.isEmpty()) {
+                        System.out.println("Nenhuma versão de snapshot encontrada.");
+                        break;
+                    }
+                    // Ordenar e exibir opções ao usuário
+                    Collections.sort(versoesDisponiveis);
+                    System.out.println("Versões disponíveis para descompressão:");
+                    for (int v : versoesDisponiveis) {
+                        System.out.println( v +")" + " Versão " + v);
+                    }
+                    // Solicitar input do usuário
+                    System.out.print("Digite a versão que deseja descomprimir: ");
+                    int escolhida = sc.nextInt();
+
+                    if (!versoesDisponiveis.contains(escolhida)) {
+                        System.out.println("Versão inválida. Operação cancelada.");
+                        break;
+                    }
+                    Compression.decompress(escolhida);
+                    sc.nextLine();
+                    break;
+                case 11:
+                    System.out.printf("Deseja utilizar qual algoritmo de casamento de padrões?\n" +
+                                      "1) KMP\n" +
+                                      "2) Booyer-More\n");
+                    try {
+                        int selected = -1;
+                        while(true){
+                            selected = sc.nextInt();
+                            if(selected == 1 || selected == 2){
+                                break;
+                            } else {
+                                System.out.println("Por favor, selecione um valor válido.");
+                            }
+                        }
+                        sc.nextLine();
+                        switch (selected) {
+                            case 1:
+                                System.out.println("Digite o padrão a ser pesquisado em job_description (case-sensitive):");
+                                String padraoKMP;
+                                try {
+                                    padraoKMP = sc.nextLine();
+                                    if (padraoKMP == null || padraoKMP.trim().isEmpty()) {
+                                        System.out.println("Padrão inválido. Tente novamente.");
+                                        break;
+                                    }
+                                    ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+                                    ArrayList<Job> found_KMP_jobs = new ArrayList<>();
+                                    int foundCountKMP = 0;
+                                    int previousCountKMP = foundCountKMP;
+                                    for (Job job_5 : jobs) {
+                                        try {
+                                            foundCountKMP += KMP.search(padraoKMP, job_5.getJob_description());
+                                            if (foundCountKMP > previousCountKMP) {
+                                                found_KMP_jobs.add(job_5);
+                                            }
+                                            previousCountKMP = foundCountKMP;
+                                        } catch (Exception e) {
+                                            System.out.println("Erro ao buscar no job ID " + job_5.getJob_id() + ": " + e.getMessage());
+                                        }
+                                    }
+                                    jobs = null;
+                                    if (!found_KMP_jobs.isEmpty()) {
+                                        System.out.println("Padrão \"" + padraoKMP + "\" encontrado " + foundCountKMP + " vezes em " + found_KMP_jobs.size() + " registros.");
+                                        String resposta;
+                                        while (true) {
+                                            System.out.println("Deseja ver os registros de ocorrência? (S/N)");
+                                            resposta = sc.nextLine();
+                                            if (resposta.toLowerCase().trim().equals("s")) {
+                                                for (Job job_5 : found_KMP_jobs) {
+                                                    System.out.println(job_5);
+                                                }
+                                                System.out.println("Padrão \"" + padraoKMP + "\" encontrado " + foundCountKMP + " vezes em " + found_KMP_jobs.size() + " registros.");
+                                                break;
+                                            } else if (resposta.toLowerCase().trim().equals("n")) {
+                                                break;
+                                            } else {
+                                                System.out.println("Resposta inválida.");
+                                            }
+                                        }
+                                        found_KMP_jobs = null;
+                                    } else {
+                                        System.out.println("Padrão não encontrado em nenhum registro.");
+                                    }
+                                } catch (Exception e) {
+                                    System.out.println("Erro ao ler o padrão ou executar a busca: " + e.getMessage());
+                                }
+                                break;
+                            case 2:
+                                System.out.println("Digite o padrão a ser pesquisado em job_description (case-sensitive):");
+                                String padraoBM;
+                                try {
+                                    padraoBM = sc.nextLine();
+                                    if (padraoBM == null || padraoBM.trim().isEmpty()) {
+                                        System.out.println("Padrão inválido. Tente novamente.");
+                                        break;
+                                    }
+                                    ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+                                    ArrayList<Job> found_BM_jobs = new ArrayList<>();
+                                    int foundCountBM = 0;
+                                    int previousCountBM = foundCountBM;
+                                    for (Job job_5 : jobs) {
+                                        try {
+                                            foundCountBM += BoyerMoore.search(padraoBM, job_5.getJob_description());
+                                            if (foundCountBM > previousCountBM) {
+                                                found_BM_jobs.add(job_5);
+                                            }
+                                            previousCountBM = foundCountBM;
+                                        } catch (Exception e) {
+                                            System.out.println("Erro ao buscar no job ID " + job_5.getJob_id() + ": " + e.getMessage());
+                                        }
+                                    }
+                                    jobs = null;
+                                    if (!found_BM_jobs.isEmpty()) {
+                                        System.out.println("Padrão \"" + padraoBM + "\" encontrado " + foundCountBM + " vezes em " + found_BM_jobs.size() + " registros.");
+                                        String resposta;
+                                        while (true) {
+                                            System.out.println("Deseja ver os registros de ocorrência? (S/N)");
+                                            resposta = sc.nextLine();
+                                            if (resposta.toLowerCase().trim().equals("s")) {
+                                                for (Job job_5 : found_BM_jobs) {
+                                                    System.out.println(job_5);
+                                                }
+                                                System.out.println("Padrão \"" + padraoBM + "\" encontrado " + foundCountBM + " vezes em " + found_BM_jobs.size() + " registros.");
+                                                break;
+                                            } else if (resposta.toLowerCase().trim().equals("n")) {
+                                                break;
+                                            } else {
+                                                System.out.println("Resposta inválida.");
+                                            }
+                                        }
+                                        found_BM_jobs = null;
+                                    } else {
+                                        System.out.println("Padrão não encontrado em nenhum registro.");
+                                    }
+                                } catch (Exception e) {
+                                    System.out.println("Erro ao ler o padrão ou executar a busca: " + e.getMessage());
+                                }
+                                break;
+                        }
+                    } catch (Exception e){
+                        System.err.println("Erro em casamento de padroes: " + e);
+                    }
                     break;
                 case 21:
                     invertedIndex_JT.printIndex();

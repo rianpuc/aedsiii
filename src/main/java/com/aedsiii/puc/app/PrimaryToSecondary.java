@@ -1,6 +1,8 @@
 package com.aedsiii.puc.app;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
@@ -39,5 +41,13 @@ public class PrimaryToSecondary {
         } catch (Exception e){
             System.err.println("Erro em PrimaryToSecondary.java: " + e);
         }
+    }
+    public static byte[] toByteArray(ArrayList<Job> jobs) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        for(Job j : jobs){
+            byte[] ba = j.toByteArray(1);
+            baos.write(ba);
+        }
+        return baos.toByteArray();
     }
 }
