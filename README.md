@@ -109,3 +109,11 @@ A Cifra de César é um dos mais simples algoritmos de criptografia. Trata-se de
 ## Testes e resultados
 
 ## Conclusão
+
+O desenvolvimento deste projeto permitiu a aplicação prática e aprofundada dos algoritmos aprendidos em sala de aula. Cada etapa representou um avanço significativo na eficiência e utilidade do sistema.
+
+A transição da manipulação sequencial para o uso de arquivos indexados com Árvore B, Hash Extensível e Lista Invertida demonstrou de forma clara o impacto das estruturas de dados no desempenho de operações de busca, atualização e exclusão. Foi possível ver na prática a eficiência do acesso indexado em comparação com a busca sequencial.
+
+A implementação dos algoritmos de compactação LZW e Huffman adicionou uma camada de otimização de armazenamento, evidenciando como diferentes abordagens podem ser utilizadas para reduzir a redundância e o tamanho físico dos dados. Além disso, os algoritmos de casamento de padrões KMP e Boyer-Moore permitiram a busca por conteúdo, permitindo a localização eficiente de informações nos registros.
+
+... criptografious
