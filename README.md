@@ -104,7 +104,9 @@ No contexto deste projeto, a aplicação de algoritmos criptográficos visa prot
 
 A Cifra de César é um dos mais simples algoritmos de criptografia. Trata-se de uma cifra de substituição, na qual cada letra do texto a ser criptografado é substituída por outra letra que se encontra um número fixo de posições à frente no alfabeto. Esse número fixo de deslocamento é a chave do algoritmo. Por utilizar a mesma chave tanto para criptografar quanto para decifrar (deslocando na direção oposta), ela é classificada como um **algoritmo de chave simétrica**.
 
-#### 4.2: 
+#### 4.2: Criptografia usando RSA 
+
+Neste projeto, o RSA foi implementado manualmente para demonstrar seu funcionamento com chaves de tamanho arbitrário, contornando as restrições de segurança das bibliotecas padrão do Java (que exigem chaves de no mínimo 512 bits). Para lidar com arquivos de qualquer tamanho usando chaves pequenas, a criptografia foi aplicada em blocos, onde cada byte do arquivo é cifrado individualmente.
 
 ## Testes e resultados
 
@@ -115,5 +117,3 @@ O desenvolvimento deste projeto permitiu a aplicação prática e aprofundada do
 A transição da manipulação sequencial para o uso de arquivos indexados com Árvore B, Hash Extensível e Lista Invertida demonstrou de forma clara o impacto das estruturas de dados no desempenho de operações de busca, atualização e exclusão. Foi possível ver na prática a eficiência do acesso indexado em comparação com a busca sequencial.
 
 A implementação dos algoritmos de compactação LZW e Huffman adicionou uma camada de otimização de armazenamento, evidenciando como diferentes abordagens podem ser utilizadas para reduzir a redundância e o tamanho físico dos dados. Além disso, os algoritmos de casamento de padrões KMP e Boyer-Moore permitiram a busca por conteúdo, permitindo a localização eficiente de informações nos registros.
-
-... criptografious
