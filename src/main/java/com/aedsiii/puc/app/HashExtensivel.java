@@ -314,7 +314,7 @@ public class HashExtensivel {
             }
     }
     public boolean create(RegistroHashExtensivel elem) throws Exception {
-        // Carrega TODO o diretório para a memória
+        // Carrega todo o diretório para a memória
         byte[] bd = new byte[(int) arqDiretorio.length()];
         arqDiretorio.seek(0);
         arqDiretorio.read(bd);

@@ -7,14 +7,21 @@ import java.io.RandomAccessFile;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.PublicKey;
 
 import com.aedsiii.puc.model.BoyerMoore;
+import com.aedsiii.puc.model.CifraCesar;
+import com.aedsiii.puc.model.CifraRsa;
 import com.aedsiii.puc.model.InvertedIndex;
 import com.aedsiii.puc.model.Job;
 import com.aedsiii.puc.model.KMP;
 import com.aedsiii.puc.model.PaginaBTree;
 import com.aedsiii.puc.model.RegistroBTree;
 import com.aedsiii.puc.model.RegistroHashExtensivel;
+import com.aedsiii.puc.model.Rsa;
+import com.aedsiii.puc.model.RsaUtils;
 
 public class Main {
     private static final String DB_PATH = "binary_db.db";
@@ -23,14 +30,20 @@ public class Main {
     private static final String HE_PATH = "./hash_extensivel";
     private static final String BTREE_PATH = "btree.db";
     private static String METHOD = "";
+    private static String ENCRYPT_METHOD = "";
+    private static int CAESAR_SHIFT = -1;
+    private static int FIRST_PRIME = -1;
+    private static int SECOND_PRIME = -1;
     private static int BTREE_ORDER = -1;
     private static int HASH_CESTOS = -1;
     private static boolean FILE_CREATION_NEEDED;
     private static final String INVERTED_INDEX_JOBTITLE_PATH = "invertedindex_jobtitle.dat";
     private static final String INVERTED_INDEX_JOBROLE_PATH = "invertedindex_jobrole.dat";
+    private static ArrayList<Job> jobs;
+    private static boolean NEED_ENCRYPT = false;
 
     public static void printMenu(){
-        System.out.printf("\tMetodo atual:\t");
+        System.out.printf("\tMetodo de armazenamento: ");
         switch (METHOD) {
             case "sequencial":
                 System.out.printf("Sequencial\n");
@@ -57,9 +70,10 @@ public class Main {
     }
     public static void main(String[] args) throws Exception{
         Scanner sc = new Scanner(System.in);
-        changeIndexMethod(sc, true);
+        changeIndexMethod(sc, true, false);
         int answer = -1;
         int id;
+        //System.out.println(ENCRYPT_METHOD + " " + CAESAR_SHIFT + " " + FIRST_PRIME + " " + SECOND_PRIME);
         //System.out.println("BTREE_ORDER: " +  BTREE_ORDER);
         // Variáveis auxiliares
         Job job = new Job();
@@ -68,7 +82,36 @@ public class Main {
         ArrayList<RegistroBTree> registrosBT = new ArrayList<RegistroBTree>();        
         HashExtensivel he = null;
         BTree btree = null;
-        
+        //carrego os jobs da memoria secundaria para primaria
+        if(NEED_ENCRYPT){
+            if(ENCRYPT_METHOD.compareTo("caesar") == 0){
+                CifraCesar.cifrarArquivo(DB_PATH, CAESAR_SHIFT);
+            } else if(ENCRYPT_METHOD.compareTo("rsa") == 0){
+                System.out.println("-> Cifrando com RSA Manual...");
+                try {
+                    // Ler p e q do arquivo de configuração
+                    Properties config = new Properties();
+                    File configFile = new File(CONFIG_FILE);
+                    try (FileInputStream fisConfig = new FileInputStream(configFile)) {
+                        config.load(fisConfig);
+                    }
+                    BigInteger p = new BigInteger(config.getProperty("fp"));
+                    BigInteger q = new BigInteger(config.getProperty("sp"));
+
+                    // Chamar nossa nova função que usa RsaManual
+                    Rsa.cifrarArquivoRsaManualEmBlocos(DB_PATH, p, q);
+
+                } catch (Exception e) {
+                    System.err.println("Ocorreu uma falha crítica durante a cifragem com RSA Manual:");
+                    e.printStackTrace();
+                }
+            }
+        }
+        if(ENCRYPT_METHOD == "none"){
+            jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+        } else {
+            jobs = SecondaryToPrimary.toPrimaryCodificado(DB_PATH, ENCRYPT_METHOD);
+        }
         InvertedIndex invertedIndex_JT = new InvertedIndex();
         InvertedIndex invertedIndex_JR = new InvertedIndex();
         File invertedIndex_JT_File = new File(INVERTED_INDEX_JOBTITLE_PATH);
@@ -81,7 +124,7 @@ public class Main {
             //System.out.println("Listas invertidas carregadas.");
         } else {
             //System.out.println("Criando listas invertidas...");
-            ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+            jobs = SecondaryToPrimary.toPrimary(DB_PATH);
             for (Job job_ii: jobs) {
                 invertedIndex_JT.add(job_ii.getJob_title(), job_ii.getJob_id());
                 invertedIndex_JR.add(job_ii.getRole(), job_ii.getJob_id());
@@ -178,7 +221,7 @@ public class Main {
                     long addJobOffset = addjRaf.length();
                     addjRaf.close();
                     Job newJob = JobDataCollector.collectJobData(sc);
-                    id = SecondaryToPrimary.addJob(newJob, DB_PATH);
+                    id = SecondaryToPrimary.addJob(newJob, DB_PATH, ENCRYPT_METHOD);
                     if(id != -1){
                         System.out.println("Nova vaga adicionada com sucesso! ID: " + id);
                     }
@@ -212,7 +255,7 @@ public class Main {
                     }
                     switch (METHOD) {
                         case "sequencial":
-                            job = SecondaryToPrimary.getJob(id, DB_PATH);
+                            job = SecondaryToPrimary.getJob(id, DB_PATH, ENCRYPT_METHOD);
                             if (job.getJob_id() != -1) {
                                 System.out.println(job);
                             }
@@ -256,7 +299,7 @@ public class Main {
                     }
                     switch (METHOD) {
                         case "sequencial":
-                            boolean status = SecondaryToPrimary.updateJob(id, DB_PATH, sc);
+                            boolean status = SecondaryToPrimary.updateJob(id, DB_PATH, sc, ENCRYPT_METHOD);
                             if (status) {
                                 System.out.println("Vaga editada com sucesso! ID: " + id);
                             } else {
@@ -346,8 +389,8 @@ public class Main {
                     switch (METHOD) {
                         case "sequencial":
                             // Guardando para atualizar lista de termos
-                            aux_ii_deletedJob = SecondaryToPrimary.getJob(id, DB_PATH);
-                            boolean res = SecondaryToPrimary.removeJob(id, DB_PATH);
+                            aux_ii_deletedJob = SecondaryToPrimary.getJob(id, DB_PATH, ENCRYPT_METHOD);
+                            boolean res = SecondaryToPrimary.removeJob(id, DB_PATH, ENCRYPT_METHOD);
                             if(res){
                                 System.out.println("Registro com ID " + id + " removido!");
                             } else {
@@ -405,9 +448,11 @@ public class Main {
                     }
                     break;
                 case 5: // mostrar todos os jobs
+                    if(ENCRYPT_METHOD.compareTo("caesar") == 0){
+                        jobs = SecondaryToPrimary.toPrimaryCodificado(DB_PATH, ENCRYPT_METHOD);
+                    }
                     switch (METHOD) {
                         case "sequencial":
-                            ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
                             for (Job job_5 : jobs) {
                                 System.out.println(job_5);
                             }
@@ -449,7 +494,7 @@ public class Main {
                         switch (METHOD) {
                             case "sequencial":
                                 for (int II_sequential_id : searchResults) {
-                                    Job searchedJob = SecondaryToPrimary.getJob(II_sequential_id, DB_PATH);
+                                    Job searchedJob = SecondaryToPrimary.getJob(II_sequential_id, DB_PATH, ENCRYPT_METHOD);
                                     System.out.println(searchedJob);
                                 }
                                 break;
@@ -512,7 +557,7 @@ public class Main {
                     }
                     break;
                 case 8:
-                    changeIndexMethod(sc, false);
+                    changeIndexMethod(sc, false, false);
                     break;
                 case 9:
                     Compression.compress(DB_PATH);
@@ -579,7 +624,7 @@ public class Main {
                                         System.out.println("Padrão inválido. Tente novamente.");
                                         break;
                                     }
-                                    ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+                                    jobs = SecondaryToPrimary.toPrimary(DB_PATH);
                                     ArrayList<Job> found_KMP_jobs = new ArrayList<>();
                                     int foundCountKMP = 0;
                                     int previousCountKMP = foundCountKMP;
@@ -630,7 +675,7 @@ public class Main {
                                         System.out.println("Padrão inválido. Tente novamente.");
                                         break;
                                     }
-                                    ArrayList<Job> jobs = SecondaryToPrimary.toPrimary(DB_PATH);
+                                    jobs = SecondaryToPrimary.toPrimary(DB_PATH);
                                     ArrayList<Job> found_BM_jobs = new ArrayList<>();
                                     int foundCountBM = 0;
                                     int previousCountBM = foundCountBM;
@@ -689,7 +734,8 @@ public class Main {
         }
         sc.close();
     }
-    public static void changeIndexMethod(Scanner sc, boolean load) {
+    // CE = argumento para mudar o metodo de criptografia
+    public static void changeIndexMethod(Scanner sc, boolean load, boolean ce) {
         Properties config = new Properties();
         File configFile = new File(CONFIG_FILE);
         FILE_CREATION_NEEDED = true;
@@ -760,6 +806,87 @@ public class Main {
                     config.load(fis);
                 }
             }
+            String encryptMethod = config.getProperty("encrypt.method");
+            if(ce || encryptMethod == null || encryptMethod.isEmpty()){
+                int select = -1;
+                boolean validInput = false;
+                NEED_ENCRYPT = true;
+                System.out.println("Selecione a forma de criptografia: \n" + 
+                                    "0. Nenhuma.\n" +
+                                    "1. Cifra de Cesar.\n" +
+                                    "2. RSA.");
+                while (!validInput) {
+                    try {
+                        select = Integer.parseInt(sc.nextLine());
+                        if (select >= 0 && select <= 2) {
+                            validInput = true;
+                        } else {
+                            System.out.println("Por favor selecione uma opção válida.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Entrada inválida. Insira um número.");
+                    }
+                }
+                switch(select){
+                    case 0:
+                        config.setProperty("encrypt.method", "none");
+                        config.remove("fp");
+                        config.remove("sp");
+                        config.remove("shift");
+                        break;
+                    case 1:
+                        config.setProperty("encrypt.method", "caesar");
+                        System.out.println("Digite o deslocamento:");
+                        int shift = Integer.parseInt(sc.nextLine());
+                        int shift_normalizado = shift % 26;
+                        System.out.println("Shift inserido: " + shift + " Shift Normalizado: " + shift_normalizado);
+                        config.setProperty("shift", "" + shift_normalizado);
+                        config.remove("fp");
+                        config.remove("sp");
+                        break;
+                    case 2:
+                        System.out.println("Digite o primeiro primo:");
+                        String p = pickPrime(sc);
+                        BigInteger fi = RsaUtils.findNextPrime(p);
+                        System.out.println("Primeiro primo: " + fi);
+                        System.out.println("Digite o segundo primo:");
+                        p = pickPrime(sc);
+                        while(true){
+                            BigInteger teste = new BigInteger(p);
+                            if(teste.isProbablePrime(100)){
+                                if(teste.compareTo(fi) == 0){
+                                    System.out.println("Primos iguais, digite outro.");
+                                } else {
+                                    break;
+                                }
+                            } else {
+                                teste = teste.nextProbablePrime();
+                                if(teste.compareTo(fi) == 0){
+                                    System.out.println("Primos iguais, digite outro.");
+                                } else {
+                                    break;
+                                }
+                            }
+                            p = pickPrime(sc);
+                        }
+                        BigInteger si = RsaUtils.findNextPrime(p);
+                        System.out.println("Segundo primo: " + si);
+                        config.setProperty("encrypt.method", "rsa");
+                        config.setProperty("fp", "" + fi);
+                        config.setProperty("sp", "" + si);
+                        config.remove("shift");
+                        break;
+                    default:
+                        System.out.println("Por favor selecione uma opção válida.");
+                        break;
+                }
+                try (FileOutputStream fos = new FileOutputStream(configFile)) {
+                    config.store(fos,  "Guardando o encrypt method");
+                }
+                try (FileInputStream fis = new FileInputStream(configFile)) {
+                    config.load(fis);
+                }
+            }
             METHOD = config.getProperty("index.method");
             switch (METHOD) {
                 case "sequencial":
@@ -777,8 +904,37 @@ public class Main {
                     System.out.println(METHOD);
                     break;
             }
+            ENCRYPT_METHOD = config.getProperty("encrypt.method");
+            switch(ENCRYPT_METHOD){
+                case "none":
+                    break;
+                case "caesar":
+                    CAESAR_SHIFT = Integer.parseInt(config.getProperty("shift"));
+                    break;
+                case "rsa":
+                    FIRST_PRIME = Integer.parseInt(config.getProperty("fp"));
+                    SECOND_PRIME = Integer.parseInt(config.getProperty("sp"));
+                    break;
+            }
         } catch (IOException e){
             e.printStackTrace();
         }
+    }
+    public static String pickPrime(Scanner sc){
+        String resultado = "";
+        try {
+            String teste = sc.nextLine();
+            BigInteger inteiro = new BigInteger(teste);
+            int compare = inteiro.compareTo(new BigInteger("50"));
+            if (compare == -1){
+                System.out.println("Por favor, digite um numero maior que 50.");
+                return pickPrime(sc);
+            }
+            resultado = teste;
+        } catch (NumberFormatException e){
+            System.out.println("Entrada inválida. Insira um número.");
+            return pickPrime(sc);
+        }
+        return resultado;
     }
 }
