@@ -104,9 +104,23 @@ No contexto deste projeto, a aplicação de algoritmos criptográficos visa prot
 
 A Cifra de César é um dos mais simples algoritmos de criptografia. Trata-se de uma cifra de substituição, na qual cada letra do texto a ser criptografado é substituída por outra letra que se encontra um número fixo de posições à frente no alfabeto. Esse número fixo de deslocamento é a chave do algoritmo. Por utilizar a mesma chave tanto para criptografar quanto para decifrar (deslocando na direção oposta), ela é classificada como um **algoritmo de chave simétrica**.
 
-#### 4.2: 
+#### 4.2: Criptografia usando RSA 
+
+Neste projeto, o RSA foi implementado manualmente para demonstrar seu funcionamento com chaves de tamanho arbitrário, contornando as restrições de segurança das bibliotecas padrão do Java (que exigem chaves de no mínimo 512 bits). Para lidar com arquivos de qualquer tamanho usando chaves pequenas, a criptografia foi aplicada em blocos, onde cada byte do arquivo é cifrado individualmente.
 
 ## Testes e resultados
+
+### Indexação
+
+Conforme os testes com arquivos sequenciais, indexados com B-tree e Hash, chega-se à conclusão de que, de fato, o desempenho na recuperação dos registros nos arquivos indexados é muito superior ao do arquivo sequencial. Contudo, o custo de implementação e de manutenção dos índices é um ponto que merece destaque, tendo em vista que é necessário manter em ordem tanto o arquivo indexado quanto o arquivo de dados simultaneamente.
+
+### Compactação
+
+Conforme os testes com os algoritmos de Huffman e LZW, conseguimos compactar com sucesso o arquivo de dados. Observou-se um resultado satisfatório em relação à redução do tamanho do arquivo, considerando que o LZW reduziu em mais de 60%, enquanto o Huffman alcançou uma redução de 40%. Contudo, sua velocidade, tanto para compressão quanto para descompressão, foi superior à do LZW.
+
+### Criptografia
+
+Conforme os testes utilizando a Cifra de César e o algoritmo RSA, foi possível criptografar com sucesso todo o arquivo de dados. Além disso, durante as operações de CRUD, a descriptografia ocorreu corretamente, permitindo acesso aos dados esperados sem alterar o conteúdo original do arquivo. Isso demonstra que é viável garantir segurança sem comprometer a integridade dos dados.
 
 ## Conclusão
 
@@ -116,4 +130,4 @@ A transição da manipulação sequencial para o uso de arquivos indexados com �
 
 A implementação dos algoritmos de compactação LZW e Huffman adicionou uma camada de otimização de armazenamento, evidenciando como diferentes abordagens podem ser utilizadas para reduzir a redundância e o tamanho físico dos dados. Além disso, os algoritmos de casamento de padrões KMP e Boyer-Moore permitiram a busca por conteúdo, permitindo a localização eficiente de informações nos registros.
 
-... criptografious
+Por fim, a aplicação de criptografia com a Cifra de César e o algoritmo RSA reforçou a importância da segurança da informação. Demonstrou-se que é possível proteger os dados armazenados sem prejudicar a funcionalidade do sistema, garantindo confidencialidade e integridade nas operações realizadas.
