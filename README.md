@@ -110,6 +110,18 @@ Neste projeto, o RSA foi implementado manualmente para demonstrar seu funcioname
 
 ## Testes e resultados
 
+### Indexação
+
+Conforme os testes com arquivos sequenciais, indexados com B-tree e Hash, chega-se à conclusão de que, de fato, o desempenho na recuperação dos registros nos arquivos indexados é muito superior ao do arquivo sequencial. Contudo, o custo de implementação e de manutenção dos índices é um ponto que merece destaque, tendo em vista que é necessário manter em ordem tanto o arquivo indexado quanto o arquivo de dados simultaneamente.
+
+### Compactação
+
+Conforme os testes com os algoritmos de Huffman e LZW, conseguimos compactar com sucesso o arquivo de dados. Observou-se um resultado satisfatório em relação à redução do tamanho do arquivo, considerando que o LZW reduziu em mais de 60%, enquanto o Huffman alcançou uma redução de 40%. Contudo, sua velocidade, tanto para compressão quanto para descompressão, foi superior à do LZW.
+
+### Criptografia
+
+Conforme os testes utilizando a Cifra de César e o algoritmo RSA, foi possível criptografar com sucesso todo o arquivo de dados. Além disso, durante as operações de CRUD, a descriptografia ocorreu corretamente, permitindo acesso aos dados esperados sem alterar o conteúdo original do arquivo. Isso demonstra que é viável garantir segurança sem comprometer a integridade dos dados.
+
 ## Conclusão
 
 O desenvolvimento deste projeto permitiu a aplicação prática e aprofundada dos algoritmos aprendidos em sala de aula. Cada etapa representou um avanço significativo na eficiência e utilidade do sistema.
@@ -117,3 +129,5 @@ O desenvolvimento deste projeto permitiu a aplicação prática e aprofundada do
 A transição da manipulação sequencial para o uso de arquivos indexados com Árvore B, Hash Extensível e Lista Invertida demonstrou de forma clara o impacto das estruturas de dados no desempenho de operações de busca, atualização e exclusão. Foi possível ver na prática a eficiência do acesso indexado em comparação com a busca sequencial.
 
 A implementação dos algoritmos de compactação LZW e Huffman adicionou uma camada de otimização de armazenamento, evidenciando como diferentes abordagens podem ser utilizadas para reduzir a redundância e o tamanho físico dos dados. Além disso, os algoritmos de casamento de padrões KMP e Boyer-Moore permitiram a busca por conteúdo, permitindo a localização eficiente de informações nos registros.
+
+Por fim, a aplicação de criptografia com a Cifra de César e o algoritmo RSA reforçou a importância da segurança da informação. Demonstrou-se que é possível proteger os dados armazenados sem prejudicar a funcionalidade do sistema, garantindo confidencialidade e integridade nas operações realizadas.
